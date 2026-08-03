@@ -2,9 +2,9 @@
 
 ## Current implementation unit
 
-PR1 — Tenancy, auth, isolation has passed final verification and is ready to merge. GitHub issue: #3. PR0 was merged as pull request #2.
+PR2 — Sites & the site map file is blocked before implementation. GitHub issue: #5. PR1 was merged as pull request #4.
 
-PR1 adds ULID public IDs, tenant memberships, scoped audit logs, local session authentication, tenant policy/context middleware, and `platform:bootstrap-admin`. `./scripts/tm.sh test` passes 11 tests / 69 assertions, including cross-tenant 404 and global-scope isolation coverage.
+PR0 and PR1 are merged. PR2 cannot generate the specified `storage/tm-sites.php` map without a decision about its required current daily `salt`: section 7.3 includes it, while salts are introduced only in PR4. No provisional salt or incomplete map format has been implemented.
 
 ## Licence decision
 
