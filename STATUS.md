@@ -2,9 +2,9 @@
 
 ## Current implementation unit
 
-PR2 — Sites & the site map file is blocked before implementation. GitHub issue: #5. PR1 was merged as pull request #4.
+PR2 — Sites & the site map file has passed final verification and is ready to merge. GitHub issue: #5. PR1 was merged as pull request #4.
 
-PR0 and PR1 are merged. PR2 cannot generate the specified `storage/tm-sites.php` map without a decision about its required current daily `salt`: section 7.3 includes it, while salts are introduced only in PR4. No provisional salt or incomplete map format has been implemented.
+PR0 and PR1 are merged. The owner decided that PR2's `storage/tm-sites.php` map omits `salt` until PR4 introduces the salts table and rotation. No provisional, static, or unrotated salt will be written. `./scripts/tm.sh test` passes 13 tests / 113 assertions, including regeneration after every site/site-host mutation, rotation identity preservation, and the post-transaction map boundary.
 
 ## Licence decision
 

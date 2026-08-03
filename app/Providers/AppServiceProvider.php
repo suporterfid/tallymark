@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Application\Tenancy\TenantContext;
+use App\Application\Sites\SiteMapGenerator;
+use App\Application\Sites\SiteMapWriter;
 use App\Infrastructure\Persistence\Eloquent\Tenant;
 use App\Policies\TenantPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -16,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(TenantContext::class);
+        $this->app->bind(SiteMapWriter::class, SiteMapGenerator::class);
     }
 
     /**
