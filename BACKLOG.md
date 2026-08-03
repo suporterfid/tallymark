@@ -1,7 +1,7 @@
 # Backlog and open questions
 
-No open questions are currently blocking PR0.
+## Open question: Laravel 12 and the lockfile licence rule
 
-## Resolved: Laravel 12 and the lockfile licence rule
+PR0 requires Laravel 12. Its dependency chain `laravel/framework` → `league/commonmark` → `league/config` reaches `nette/schema` and `nette/utils`; their `composer.lock` licence arrays contain both `BSD-3-Clause` and GPL entries. The upstream licence files offer New BSD or GPL v2/v3 and recommend BSD.
 
-Laravel 12 reaches `nette/schema` and `nette/utils` through `league/commonmark` and `league/config`. The packages' authoritative licence files offer New BSD or GPL v2/v3 and recommend BSD. TallyMark uses the New BSD option. The release licence audit must therefore accept a package when its Composer licence list contains at least one permitted licence, and fail a package with no permitted option; it must continue to reject GPL-only, LGPL, AGPL, and SSPL packages.
+Section 4.4 permits only MIT, BSD-2/3-Clause, Apache-2.0, or ISC dependencies, while section 17.5 requires the release audit to fail on *any* non-permissive licence in `composer.lock`. Does the audit accept a dual-licensed package when a permitted option is available, or must Laravel 12 be replaced despite PR0 specifying it? The specification needs an explicit answer; PR0 remains blocked and no subsequent PR may start.
