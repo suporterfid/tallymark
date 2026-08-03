@@ -141,6 +141,8 @@ function Invoke-Load {
 }
 
 function Invoke-Release {
+    Invoke-Compose @('run', '--rm', 'app', 'php', 'scripts/license-audit.php')
+
     if (-not (Test-Path 'docker/release/Dockerfile')) { throw 'The release pipeline is introduced in PR14.' }
     New-Item -ItemType Directory -Force -Path 'dist' | Out-Null
     docker build -f docker/release/Dockerfile --target export --output 'type=local,dest=./dist' .

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Licensing\LicenseAudit;
 use Tests\TestCase;
 
 final class LicensingPolicyTest extends TestCase
@@ -24,5 +25,13 @@ final class LicensingPolicyTest extends TestCase
         self::assertStringContainsString('New BSD', $audit);
         self::assertStringContainsString('nette/schema', $audit);
         self::assertStringContainsString('nette/utils', $audit);
+    }
+
+    public function test_runtime_lock_file_has_no_licence_audit_violations(): void
+    {
+        $lock = json_decode((string) file_get_contents(base_path('composer.lock')), true, 512, JSON_THROW_ON_ERROR);
+        $selections = require base_path('config/licence-selections.php');
+
+        self::assertSame([], (new LicenseAudit())->violations($lock['packages'], $selections));
     }
 }

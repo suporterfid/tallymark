@@ -24,7 +24,8 @@ final class EventLine
         }
 
         $required = ['site_id', 'visitor_id', 'timestamp', 'url', 'referrer', 'event', 'name', 'properties'];
-        if (array_diff($required, array_keys($payload)) !== [] || array_diff(array_keys($payload), $required) !== []) {
+        $classificationFields = ['is_bot', 'device', 'browser', 'os'];
+        if (array_diff($required, array_keys($payload)) !== [] || array_diff(array_keys($payload), array_merge($required, $classificationFields)) !== []) {
             return null;
         }
 
@@ -38,6 +39,10 @@ final class EventLine
             || ! is_string($payload['event'])
             || ! is_string($payload['name'])
             || ! is_array($payload['properties'])
+            || (isset($payload['is_bot']) && ! is_bool($payload['is_bot']))
+            || (isset($payload['device']) && (! is_string($payload['device']) || ! in_array($payload['device'], ['desktop', 'mobile', 'tablet', 'tv', 'bot', 'unknown'], true)))
+            || (isset($payload['browser']) && (! is_string($payload['browser']) || ! in_array($payload['browser'], ['bot', 'chrome', 'edge', 'firefox', 'safari', 'unknown'], true)))
+            || (isset($payload['os']) && (! is_string($payload['os']) || ! in_array($payload['os'], ['android', 'ios', 'linux', 'macos', 'windows', 'unknown'], true)))
             || self::containsIpAddress($payload)
         ) {
             return null;
