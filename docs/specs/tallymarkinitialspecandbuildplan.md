@@ -142,10 +142,10 @@ Every feature request, user story, plan, task, and bug **MUST** be represented a
 TallyMark's entire market position is *"the MIT one"*. A copyleft dependency destroys that position.
 
 - The repository **MUST** be MIT licensed.
-- Every runtime dependency **MUST** be MIT, BSD-2/3-Clause, Apache-2.0, or ISC. **GPL, LGPL, AGPL, and SSPL dependencies MUST NOT be introduced** — including transitively.
+- Every runtime dependency **MUST** be usable under MIT, BSD-2/3-Clause, Apache-2.0, or ISC. A dual-licensed dependency is permitted only when it offers at least one of those licences, TallyMark explicitly selects that permissive option, and the selection is verified from the package's authoritative `LICENSE` file and recorded in `docs/security/dependency-audit.md`. A dependency with no permitted option — including GPL-only, LGPL-only, AGPL-only, or SSPL-only packages — **MUST NOT be introduced**, including transitively.
 - **`matomo/device-detector` is LGPL-3.0-or-later and MUST NOT be used**, despite being the obvious choice for user-agent parsing. This is the single most likely licence mistake in this project; it **MUST** be named in `CLAUDE.md` and in `.cursor/rules/`.
 - Verified-acceptable alternatives: `jaybizzle/crawler-detect` (**MIT**) for bot detection. For browser/OS/device classification, prefer a **small internal classifier** (§10.2) over any dependency; if one is added, its licence **MUST** be verified from its `LICENSE` file — not from a blog post or an aggregator — and recorded in `docs/security/dependency-audit.md`.
-- A **licence audit MUST run as part of `tm release`** and **MUST** fail the build on any non-permissive licence in `composer.lock`. This is enforcement, not documentation.
+- A **licence audit MUST run as part of `tm release`** and **MUST** fail the build when a package in `composer.lock` offers no permitted MIT, BSD-2/3-Clause, Apache-2.0, or ISC licence option. A package's Composer licence list represents alternatives: a dual-licensed package is accepted only when it has a permitted option and that option is recorded in `docs/security/dependency-audit.md`; a package with only non-permissive options fails. This is enforcement, not documentation.
 - Bundled data files carry their own terms. Geo databases in particular **MUST NOT** be vendored (§10.5).
 
 ### 4.5 The collector is not a Laravel application
@@ -779,7 +779,7 @@ The release **MUST** additionally contain `public/px.php` and `public/tm.js` at 
 - a `.env` or `.env.*` other than `.env.example`; `*.pem`, `*.key`, `id_rsa`, `id_ed25519`, `*.p12`, `*.pfx`; a `BEGIN … PRIVATE KEY` block; credential-like assignments outside the placeholder allowlist; token-like literals (`sk_live_…`, `xox[baprs]-…`);
 - missing `app/artisan`, `app/vendor/`, `app/public/build/manifest.json`, `app/public/px.php`, `app/public/tm.js`;
 - present `node_modules` or `tests/`;
-- **any non-permissive licence in `composer.lock`** (§4.4);
+- **any `composer.lock` package that offers no permitted licence option**, or any dual-licensed package whose selected permissive option is not recorded in `docs/security/dependency-audit.md` (§4.4);
 - **any vendored geo database file** (§10.5).
 
 The validator **MUST** itself be covered by a feature test planting a `.env`, a `.pem`, and a GPL package entry, asserting non-zero exit — mirroring `taskconnect tests/Feature/ReleaseSecretScanTest.php`. **These checks MUST be preserved in every PR.**
