@@ -179,6 +179,15 @@ function tm_is_obvious_bot(): bool
     return false;
 }
 
+function tm_visitor_id(string $salt, int $siteId): string
+{
+    $clientIp = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $userAgent = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+    // Intentional collector-side counterpart of App\Domain\Identity\VisitorHasher; this file cannot autoload it.
+    return substr(hash('sha256', $salt."\0".$siteId."\0".$clientIp."\0".$userAgent), 0, 16);
+}
+
 /** @return array<string, string> */
 function tm_event_properties(mixed $properties): array
 {
@@ -281,8 +290,17 @@ if (! is_file($mapPath)) {
 
 $map = require $mapPath;
 $siteKey = $payload['k'] ?? null;
+$salt = $map['salt'] ?? null;
 
-if (! is_array($map) || ! is_string($siteKey) || ! isset($map['sites'][$siteKey]) || ! is_array($map['sites'][$siteKey])) {
+if (
+    ! is_array($map)
+    || ! is_string($salt)
+    || strlen($salt) < 64
+    || ! ctype_xdigit($salt)
+    || ! is_string($siteKey)
+    || ! isset($map['sites'][$siteKey])
+    || ! is_array($map['sites'][$siteKey])
+) {
     tm_finish($startedAt, $imageResponse);
 }
 
@@ -348,6 +366,7 @@ $maximumLines = tm_env_int('TM_MAX_LINES_PER_MINUTE', 20_000, 1, 1_000_000);
 
 $event = [
     'site_id' => $site['id'],
+    'visitor_id' => tm_visitor_id($salt, $site['id']),
     'timestamp' => gmdate('c'),
     'url' => $url,
     'referrer' => tm_sanitize_url($payload['r'] ?? null, $maximumPathBytes),
