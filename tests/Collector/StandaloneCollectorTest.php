@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Collector;
 
+use App\Domain\Collection\EventLine;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
@@ -99,6 +100,9 @@ final class StandaloneCollectorTest extends TestCase
         self::assertSame(7, $event['site_id']);
         self::assertArrayHasKey('visitor_id', $event);
         self::assertMatchesRegularExpression('/^[a-f0-9]{16}$/', $event['visitor_id']);
+        $applicationLine = EventLine::fromJson($lines[0]);
+        self::assertNotNull($applicationLine);
+        self::assertSame($event, json_decode($applicationLine->toJson(), true, 512, JSON_THROW_ON_ERROR));
         self::assertSame('https://example.test/pricing?utm_source=search', $event['url']);
         self::assertSame('https://referrer.test/path?utm_medium=partner', $event['referrer']);
 

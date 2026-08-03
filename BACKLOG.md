@@ -1,8 +1,6 @@
 # Backlog and open questions
 
-## Open questions
-
-- **PR5 / issue #11 — ingest commit destination:** §7.5 requires deleting a buffer only after its aggregates commit, while aggregation tables and services arrive in PR7. The spec defines neither an interim durable event destination nor the schema/purpose of `ingest_stats`, and §5.4 requires an application-side `EventLine` contract without defining its shape. Please choose whether PR5 should (a) retain closed buffers until PR7, (b) introduce a named interim durable event store with retention, or (c) use a specifically-defined `ingest_stats` commit record as the PR5 completion boundary.
+No open questions are currently blocking PR5. The owner authorized the sustainable choice: PR5 commits a sanitized, transient `EventLine` to an `ingest_events` staging store linked to `ingest_batches`, then deletes the buffer only after that transaction commits. PR6/PR7 consume and remove staged events during classification and aggregation; the store has no IP or raw User-Agent fields and is not an export surface.
 
 The owner chose a UTC-midnight rotation boundary for PR4. A missed rotation writes and retains an `alarm` state for `analytics:maintenance` in `system_heartbeats`, which is the durable operator-facing operational state for the future authenticated health endpoint.
 
