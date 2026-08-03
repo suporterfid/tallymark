@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.git
+.github
+.idea
+.vscode
+_laravel_scaffold
+node_modules
+vendor
+frontend/node_modules
+dist
+storage/logs

@@ -1,0 +1,10 @@
+---
+description: TallyMark's non-negotiable deployment, licence, and collector boundaries
+alwaysApply: true
+---
+
+- Runtime dependencies must offer an MIT, BSD-2-Clause, BSD-3-Clause, Apache-2.0, or ISC licence option. Never add a GPL-only, LGPL-only, AGPL-only, or SSPL dependency.
+- `matomo/device-detector` is LGPL and forbidden.
+- `public/px.php` is standalone. It must not require `vendor/autoload.php`, boot Laravel, load Dotenv, instantiate framework classes, open a database connection, make DNS or outbound HTTP calls, or write application logs.
+- The collector must never set/read cookies or store raw IP addresses or user agents.
+- Production runtime code must not use `exec`, `shell_exec`, `proc_open`, or `popen`.
