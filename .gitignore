@@ -19,6 +19,7 @@
 /storage/*.key
 /storage/tm-sites.php
 /storage/tm-sites.lock
+/storage/tm-buffer/
 /storage/pail
 /vendor
 /_laravel_scaffold

@@ -2,9 +2,9 @@
 
 ## Current implementation unit
 
-PR2 — Sites & the site map file has passed final verification and is ready to merge. GitHub issue: #5. PR1 was merged as pull request #4.
+PR3 — Standalone collector is ready to merge. GitHub issue: #7. PR2 was merged as pull request #6.
 
-PR0 and PR1 are merged. The owner decided that PR2's `storage/tm-sites.php` map omits `salt` until PR4 introduces the salts table and rotation. No provisional, static, or unrotated salt will be written. `./scripts/tm.sh test` passes 13 tests / 113 assertions, including regeneration after every site/site-host mutation, rotation identity preservation, and the post-transaction map boundary.
+PR3 adds a standalone `public/px.php` with no Composer, Laravel, or database path. Isolated bare-server tests verify 204/CORS, no cookie, unknown-key drops, host validation, DNT, bots, body caps, IPv4/IPv6 and raw-user-agent suppression, URL sanitization, concurrent shard caps, GIF fallback, and p99 PHP timing. `./scripts/tm.sh test` is green; Composer validation and the CI Compose configuration are also green.
 
 ## Licence decision
 
