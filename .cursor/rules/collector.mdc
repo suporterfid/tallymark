@@ -1,0 +1,8 @@
+---
+description: Rules for the dependency-free tracking collector
+globs:
+  - public/px.php
+alwaysApply: false
+---
+
+Keep this file self-contained and strict-types PHP. Its only configuration source is the generated site-map PHP file. It must respond silently and must never include Composer, Laravel, database, or outbound-network code.

@@ -1,0 +1,15 @@
+# CI overrides: retain the application port for smoke checks and keep supporting services internal.
+services:
+  app:
+    ports: !override
+      - "8060:80"
+  mysql:
+    ports: !override []
+  mailpit:
+    ports: !override []
+  demosite:
+    ports: !override
+      - "8065:80"
+  node:
+    ports: !override
+      - "5173:5173"
