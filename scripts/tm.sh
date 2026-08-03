@@ -150,6 +150,8 @@ cmd_load() {
 }
 
 cmd_release() {
+  compose run --rm app php scripts/license-audit.php
+
   if [[ ! -f docker/release/Dockerfile ]]; then
     echo "The release pipeline is introduced in PR14." >&2
     return 1

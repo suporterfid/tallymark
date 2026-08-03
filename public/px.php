@@ -168,15 +168,36 @@ function tm_request_header_host(string $header): ?string
 
 function tm_is_obvious_bot(): bool
 {
+    return tm_classify_user_agent()['is_bot'];
+}
+
+/** @return array{is_bot: bool, device: string, browser: string, os: string} */
+function tm_classify_user_agent(): array
+{
+    // Intentional duplicate of App\Domain\Analytics\UserAgentClassifier; §5.4 forbids Composer autoloading here.
     $userAgent = strtolower((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
 
     foreach (['bot', 'crawl', 'spider', 'preview', 'headless', 'curl/', 'wget'] as $needle) {
         if (str_contains($userAgent, $needle)) {
-            return true;
+            return ['is_bot' => true, 'device' => 'bot', 'browser' => 'bot', 'os' => 'unknown'];
         }
     }
 
-    return false;
+    $device = str_contains($userAgent, 'ipad') || str_contains($userAgent, 'tablet') ? 'tablet'
+        : (str_contains($userAgent, 'mobile') || str_contains($userAgent, 'iphone') || str_contains($userAgent, 'android') ? 'mobile'
+            : (str_contains($userAgent, 'smart-tv') || str_contains($userAgent, 'hbbtv') ? 'tv'
+                : ((str_contains($userAgent, 'windows') || str_contains($userAgent, 'mac os') || str_contains($userAgent, 'linux')) ? 'desktop' : 'unknown')));
+    $browser = str_contains($userAgent, 'edg/') ? 'edge'
+        : (str_contains($userAgent, 'firefox/') ? 'firefox'
+            : (str_contains($userAgent, 'chrome/') || str_contains($userAgent, 'crios/') ? 'chrome'
+                : (str_contains($userAgent, 'safari/') ? 'safari' : 'unknown')));
+    $os = str_contains($userAgent, 'android') ? 'android'
+        : (str_contains($userAgent, 'iphone') || str_contains($userAgent, 'ipad') || str_contains($userAgent, 'cpu os') ? 'ios'
+            : (str_contains($userAgent, 'windows') ? 'windows'
+                : (str_contains($userAgent, 'mac os') ? 'macos'
+                    : (str_contains($userAgent, 'linux') ? 'linux' : 'unknown'))));
+
+    return ['is_bot' => false, 'device' => $device, 'browser' => $browser, 'os' => $os];
 }
 
 function tm_visitor_id(string $salt, int $siteId): string
@@ -336,10 +357,6 @@ if ($respectDnt && (($_SERVER['HTTP_DNT'] ?? '') === '1' || ($_SERVER['HTTP_SEC_
     tm_finish($startedAt, $imageResponse);
 }
 
-if (tm_is_obvious_bot()) {
-    tm_finish($startedAt, $imageResponse);
-}
-
 try {
     $sample = max(1, min(100, (int) ($site['sample'] ?? 100)));
 
@@ -364,6 +381,7 @@ $maximumBufferBytes = tm_env_int('TM_BUFFER_MAX_MB', 64, 1, 4096) * 1024 * 1024;
 $bufferPath = $bufferDirectory.DIRECTORY_SEPARATOR.gmdate('YmdHi').'-'.$shard.'.ndjson';
 $maximumLines = tm_env_int('TM_MAX_LINES_PER_MINUTE', 20_000, 1, 1_000_000);
 
+$classification = tm_classify_user_agent();
 $event = [
     'site_id' => $site['id'],
     'visitor_id' => tm_visitor_id($salt, $site['id']),
@@ -373,6 +391,10 @@ $event = [
     'event' => tm_safe_text($payload['e'] ?? null, 64) ?: 'pageview',
     'name' => tm_safe_text($payload['n'] ?? null, 64),
     'properties' => tm_event_properties($payload['p'] ?? null),
+    'is_bot' => $classification['is_bot'],
+    'device' => $classification['device'],
+    'browser' => $classification['browser'],
+    'os' => $classification['os'],
 ];
 
 try {

@@ -144,7 +144,7 @@ TallyMark's entire market position is *"the MIT one"*. A copyleft dependency des
 - The repository **MUST** be MIT licensed.
 - Every runtime dependency **MUST** be usable under MIT, BSD-2/3-Clause, Apache-2.0, or ISC. A dual-licensed dependency is permitted only when it offers at least one of those licences, TallyMark explicitly selects that permissive option, and the selection is verified from the package's authoritative `LICENSE` file and recorded in `docs/security/dependency-audit.md`. A dependency with no permitted option — including GPL-only, LGPL-only, AGPL-only, or SSPL-only packages — **MUST NOT be introduced**, including transitively.
 - **`matomo/device-detector` is LGPL-3.0-or-later and MUST NOT be used**, despite being the obvious choice for user-agent parsing. This is the single most likely licence mistake in this project; it **MUST** be named in `CLAUDE.md` and in `.cursor/rules/`.
-- Verified-acceptable alternatives: `jaybizzle/crawler-detect` (**MIT**) for bot detection. For browser/OS/device classification, prefer a **small internal classifier** (§10.2) over any dependency; if one is added, its licence **MUST** be verified from its `LICENSE` file — not from a blog post or an aggregator — and recorded in `docs/security/dependency-audit.md`.
+- `jaybizzle/crawler-detect` is MIT, but it is not used in v0: §§8.2 and 4.5 prohibit it from receiving a raw User-Agent at ingest or from being autoloaded by the collector. Bot detection, like browser/OS/device classification, uses a **small internal classifier** (§10.2) that emits only derived fields. If any classification dependency is added later, its licence **MUST** be verified from its `LICENSE` file — not from a blog post or an aggregator — and recorded in `docs/security/dependency-audit.md`.
 - A **licence audit MUST run as part of `tm release`** and **MUST** fail the build when a package in `composer.lock` offers no permitted MIT, BSD-2/3-Clause, Apache-2.0, or ISC licence option. A package's Composer licence list represents alternatives: a dual-licensed package is accepted only when it has a permitted option and that option is recorded in `docs/security/dependency-audit.md`; a package with only non-permissive options fails. This is enforcement, not documentation.
 - Bundled data files carry their own terms. Geo databases in particular **MUST NOT** be vendored (§10.5).
 
@@ -340,9 +340,9 @@ return [
 
 ### 7.4 Cheap prefilters on the hot path
 
-Only filters that cost microseconds run here; authoritative classification happens at ingest (§10.2).
+Only filters that cost microseconds run here; the collector emits derived User-Agent classifications as required by §10.2.
 
-- A short substring check against an obvious-bot list (`bot`, `crawl`, `spider`, `preview`, `headless`, `curl/`, `wget`).
+- A short internal bot classifier using a curated obvious-bot list (`bot`, `crawl`, `spider`, `preview`, `headless`, `curl/`, `wget`). It writes only a derived boolean to the buffer; it never writes the User-Agent.
 - `DNT: 1` / `Sec-GPC: 1` **MUST** be honoured when `TM_RESPECT_DNT` is enabled (default **on**), dropping the event.
 - Per-site sampling: drop when `random_int(1,100) > sample`.
 
@@ -393,7 +393,7 @@ The following **MUST NOT** be written to the buffer file, the database, the logs
 - URL fragments;
 - `Authorization` headers or any request header not explicitly enumerated in this spec.
 
-The IP and User-Agent exist **only** as local variables inside a single collector invocation: consumed to produce the visitor hash, the country code, and the device classification, then discarded when the process ends. A test **MUST** assert no buffer line and no database column can contain an IP-shaped string.
+The IP and User-Agent exist **only** as local variables inside a single collector invocation: consumed to produce the visitor hash, the country code, and the derived bot/device/browser/OS classification fields, then discarded when the process ends. A test **MUST** assert no buffer line and no database column can contain an IP-shaped string.
 
 ### 8.3 URL sanitization
 
@@ -445,10 +445,10 @@ An unauthenticated public write endpoint with no database is an unusual threat s
 
 ### 10.2 Classification
 
-Runs at ingest, never on the hot path.
+Referrer normalization runs at ingest. Bot and device classification run in the collector only because §8.2 requires the raw User-Agent to die within that invocation; they emit derived fields only and never load Composer.
 
-- **Bots** — `jaybizzle/crawler-detect` (**MIT**, verified). Bot traffic **MUST** be excluded from all reported metrics and **SHOULD** be counted separately so operators can see what was filtered.
-- **Device / browser / OS** — a **small internal classifier** over a curated regex table, kept deliberately coarse: device in `{desktop, mobile, tablet, tv, bot, unknown}`, plus browser family and OS family. `matomo/device-detector` **MUST NOT** be used (§4.4). Coarse-but-MIT beats precise-but-LGPL, and the accuracy difference is immaterial at dashboard granularity.
+- **Bots** — a small internal, conservative classifier over a curated regex table, evaluated while the User-Agent is still a collector-local variable. It writes only an `is_bot` boolean. Bot traffic **MUST** be excluded from all reported metrics and **SHOULD** be counted separately so operators can see what was filtered.
+- **Device / browser / OS** — the same **small internal classifier** emits a coarse device value in `{desktop, mobile, tablet, tv, bot, unknown}`, plus browser family and OS family. `matomo/device-detector` **MUST NOT** be used (§4.4). Coarse-but-MIT beats precise-but-LGPL, and the accuracy difference is immaterial at dashboard granularity.
 - **Referrer** — normalized to a registrable domain, with `utm_source` taking precedence when present. Self-referrals (matching the site's own hosts) **MUST** be classified as direct. A small bundled spam-referrer blocklist **SHOULD** be applied and **MUST** be operator-overridable.
 
 ### 10.3 The aggregation model (and its deliberate trade-off)
@@ -838,7 +838,7 @@ One PR unit at a time. Each **MUST** leave `main` green with `tm test` passing, 
 | **PR3** | **The collector** | `public/px.php` standalone, buffer sharding, prefilters, URL sanitization, host validation, caps | **Asserts no `vendor/autoload`, no PDO symbol, no `Set-Cookie`, always `204`.** Unknown key dropped. Buffer not web-readable. p99 < 5 ms measured |
 | **PR4** | Visitor hashing & salts | `VisitorHasher`, `salts` table, daily rotation + grace + destruction, stale-salt alarm | Hash changes across rotation; old salt provably destroyed; no IP reaches disk (asserted) |
 | **PR5** | Ingest pipeline | `analytics:ingest`, closed-bucket rule, `ingest_batches` claim leases, `TickBudget`, malformed-line tolerance | Overlapping cron runs provably never double-count; re-running a batch is a no-op; budget exits cleanly |
-| **PR6** | Sessionization & classification | `Sessionizer`, `crawler-detect` (MIT), internal device classifier, referrer normalization | Pure unit tests, zero I/O; bots excluded and counted separately; licence audit green |
+| **PR6** | Sessionization & classification | `Sessionizer`, collector-derived internal bot/device classifier, `jeremykendall/php-domain-parser` (MIT) for registrable referrers | Pure unit tests, zero I/O; bots excluded and counted separately; licence audit green |
 | **PR7** | Aggregation & cardinality | `stats_hourly_*` with unique keys, idempotent UPSERTs, `CardinalityGuard`, `(other)` folding | Double-ingest produces identical numbers; cap overflow folds and warns |
 | **PR8** | Rollups & retention | `analytics:rollup`, `analytics:maintenance`, `stats_daily_*`, `daily_visitors`, chunked retention gated on rollup | Exact daily distinct visitors; hourly never deleted before daily exists |
 | **PR9** | Dashboard API & SPA | Reporting endpoints, Vue 3 SPA, all §19 screens, `en` + `pt-BR` complete | Bounded query count asserted; approximations labelled in UI; `vue-tsc` clean |
@@ -854,7 +854,7 @@ One PR unit at a time. Each **MUST** leave `main` green with `tm test` passing, 
 
 - **PR3 and PR4 before PR5.** The buffer format and the visitor hash are the contract everything downstream depends on; changing them later invalidates stored data.
 - **PR7 before PR8.** Rollups read aggregates; building them against a schema without unique keys would bake in double-counting.
-- **PR6 gates the licence audit.** The first third-party classification dependency is where the LGPL mistake would enter; the audit **MUST** be wired in the same PR that introduces the dependency, not deferred to PR14.
+- **PR6 establishes the licence audit.** User-Agent classification is dependency-free so the collector remains compatible with §4.5; the MIT referrer parser is application-only and is verified/recorded in this PR. The audit **MUST** still be wired in this PR and future classification dependencies **MUST NOT** be introduced without it.
 - **PR12 and PR13 are independent** of each other and of PR9–PR11, and may be reordered if the cross-repo scope dependency (§14.5) blocks.
 
 ---
@@ -894,6 +894,7 @@ Funnels; limited cross-dimension filtering via a narrow pre-computed combination
 5. **Geo on the hot path.** §10.5 prefers edge headers precisely because a database lookup in the collector would require autoloading. Is a header-only default acceptable for the target audience, given many are not behind Cloudflare and will simply see `unknown`? Recommendation: yes for v0, with a clearly documented opt-in path.
 6. **GrandpaSSOn scope vocabulary.** `analytics:read` / `analytics:write` / `analytics:callback` must be added to the broker (§14.5). Who owns that issue, and does inbound mode ship disabled in v0 until it lands?
 7. **Shared-hosting inode limits.** The buffer creates up to `shards × 1440` files/day before cleanup. Some hosts enforce tight inode quotas. Should the shard count adapt, or should ingest run more aggressively? Recommendation: document the arithmetic, default to 4 shards, and have `analytics:maintenance` warn on orphan accumulation.
+8. **PR6 bot-classification input. Resolved by owner authorization.** The prior `crawler-detect` requirement conflicted with §8.2 (the raw User-Agent cannot enter the buffer/database/logs/cache) and §4.5 (the collector cannot autoload Composer). v0 uses a small zero-dependency collector classifier that stores only derived bot/device/browser/OS fields. This preserves the privacy boundary; a future parser dependency requires a compatible design and a green licence audit.
 
 ---
 

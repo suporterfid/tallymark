@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Collector;
 
 use App\Domain\Collection\EventLine;
+use App\Domain\Analytics\UserAgentClassifier;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
@@ -105,6 +106,13 @@ final class StandaloneCollectorTest extends TestCase
         self::assertSame($event, json_decode($applicationLine->toJson(), true, 512, JSON_THROW_ON_ERROR));
         self::assertSame('https://example.test/pricing?utm_source=search', $event['url']);
         self::assertSame('https://referrer.test/path?utm_medium=partner', $event['referrer']);
+        self::assertFalse($event['is_bot']);
+        self::assertSame('unknown', $event['device']);
+        $applicationClassification = (new UserAgentClassifier())->classify('RawAgent/9.9');
+        self::assertSame($applicationClassification->isBot, $event['is_bot']);
+        self::assertSame($applicationClassification->device, $event['device']);
+        self::assertSame($applicationClassification->browser, $event['browser']);
+        self::assertSame($applicationClassification->os, $event['os']);
 
         $unknown = $this->request(['k' => 'unknown-key', 'u' => 'https://example.test/']);
         self::assertSame(204, $unknown['status']);
@@ -116,15 +124,18 @@ final class StandaloneCollectorTest extends TestCase
 
         $bot = $this->request($payload, ['Origin: https://example.test', 'User-Agent: test-crawler']);
         self::assertSame(204, $bot['status']);
-        self::assertCount(1, $this->bufferLines());
+        self::assertCount(2, $this->bufferLines());
+        $botEvent = json_decode($this->bufferLines()[1], true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($botEvent['is_bot']);
+        self::assertSame('bot', $botEvent['device']);
 
         $dnt = $this->request($payload, ['Origin: https://example.test', 'DNT: 1']);
         self::assertSame(204, $dnt['status']);
-        self::assertCount(1, $this->bufferLines());
+        self::assertCount(2, $this->bufferLines());
 
         $oversized = $this->requestRaw(str_repeat('x', 2049), ['Content-Type: text/plain', 'Origin: https://example.test']);
         self::assertSame(204, $oversized['status']);
-        self::assertCount(1, $this->bufferLines());
+        self::assertCount(2, $this->bufferLines());
 
         $image = $this->getImage();
         self::assertSame(200, $image['status']);
