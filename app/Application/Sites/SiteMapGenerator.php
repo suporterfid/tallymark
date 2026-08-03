@@ -2,11 +2,14 @@
 
 namespace App\Application\Sites;
 
+use App\Application\Identity\CurrentSaltProvider;
 use App\Infrastructure\Persistence\Eloquent\Site;
 use RuntimeException;
 
 final class SiteMapGenerator implements SiteMapWriter
 {
+    public function __construct(private readonly CurrentSaltProvider $currentSaltProvider) {}
+
     public function regenerate(): void
     {
         $path = storage_path('tm-sites.php');
@@ -34,7 +37,10 @@ final class SiteMapGenerator implements SiteMapWriter
                 ->orderBy('id')
                 ->get();
 
-            $map = ['sites' => []];
+            $map = [
+                'salt' => $this->currentSaltProvider->current()->value,
+                'sites' => [],
+            ];
 
             foreach ($sites as $site) {
                 $map['sites'][$site->site_key] = [

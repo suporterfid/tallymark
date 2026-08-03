@@ -14,7 +14,7 @@ final class SiteMapTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_site_mutations_atomically_regenerate_a_map_without_a_salt_before_pr4(): void
+    public function test_site_mutations_atomically_regenerate_a_map_with_the_current_salt_after_pr4(): void
     {
         [$tenant, $user] = $this->tenantAdministrator();
 
@@ -99,7 +99,8 @@ final class SiteMapTest extends TestCase
     {
         $map = $this->siteMap();
 
-        self::assertArrayNotHasKey('salt', $map);
+        self::assertArrayHasKey('salt', $map);
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $map['salt']);
         self::assertSame([
             'id' => $siteId,
             'hosts' => $hosts,
@@ -108,7 +109,7 @@ final class SiteMapTest extends TestCase
         ], $map['sites'][$siteKey]);
     }
 
-    /** @return array{sites: array<string, array{id: int, hosts: list<string>, sample: int, validate_host: bool}>} */
+    /** @return array{salt: string, sites: array<string, array{id: int, hosts: list<string>, sample: int, validate_host: bool}>} */
     private function siteMap(): array
     {
         $path = storage_path('tm-sites.php');

@@ -28,6 +28,7 @@ final class StandaloneCollectorTest extends TestCase
         mkdir($this->bufferDirectory, 0775, true);
         copy($this->root.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'px.php', $this->runtimeRoot.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'px.php');
         file_put_contents($this->storage.DIRECTORY_SEPARATOR.'tm-sites.php', "<?php\n\nreturn ".var_export([
+            'salt' => str_repeat('a', 64),
             'sites' => [
                 'known-site-key' => [
                     'id' => 7,
@@ -96,6 +97,8 @@ final class StandaloneCollectorTest extends TestCase
         self::assertStringNotContainsString('RawAgent/9.9', $lines[0]);
         $event = json_decode($lines[0], true, 512, JSON_THROW_ON_ERROR);
         self::assertSame(7, $event['site_id']);
+        self::assertArrayHasKey('visitor_id', $event);
+        self::assertMatchesRegularExpression('/^[a-f0-9]{16}$/', $event['visitor_id']);
         self::assertSame('https://example.test/pricing?utm_source=search', $event['url']);
         self::assertSame('https://referrer.test/path?utm_medium=partner', $event['referrer']);
 
