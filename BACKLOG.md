@@ -11,3 +11,7 @@ Until PR4 introduces the salts table and rotation, the PR2 site map omits the `s
 Section 10.2 requires `jaybizzle/crawler-detect` to classify bots at ingest. Section 8.2 prohibits the raw User-Agent from being written to the buffer, database, logs, or cache and says it exists only inside one collector invocation. Section 4.5 prohibits `public/px.php` from Composer autoloading, so the collector cannot load that dependency either. The current PR3 collector deliberately discards the User-Agent after its cheap prefilter, and PR5's staged `EventLine` contains no User-Agent.
 
 Owner decision: v0 uses a small zero-dependency collector classifier and writes only derived bot/device/browser/OS fields. The specification and issue #13 record this amendment. Retaining or buffering the raw User-Agent remains prohibited.
+
+## Follow-up — Composer security advisory feed
+
+During PR6, `composer audit --locked --no-interaction` could not query Packagist because the advisory endpoint timed out. Composer had reported two advisories affecting one existing package during installation, but no advisory detail was retrieved or treated as verified. Re-run the network-backed audit during PR14's release work and record the actual package/advisory result before shipping a release.
