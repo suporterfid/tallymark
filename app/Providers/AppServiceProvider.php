@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Application\Tenancy\TenantContext;
+use App\Infrastructure\Persistence\Eloquent\Tenant;
+use App\Policies\TenantPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(TenantContext::class);
     }
 
     /**
@@ -19,6 +23,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::policy(Tenant::class, TenantPolicy::class);
     }
 }

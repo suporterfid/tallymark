@@ -2,9 +2,9 @@
 
 ## Current implementation unit
 
-PR0 — Repo scaffold & Docker loop has passed final verification and is ready to merge. GitHub issue: #1.
+PR1 — Tenancy, auth, isolation has passed final verification and is ready to merge. GitHub issue: #3. PR0 was merged as pull request #2.
 
-The scaffold is implemented and its Docker-only test loop is working locally: `./scripts/tm.sh bootstrap` completed, `./scripts/tm.sh test` passes 7 tests / 53 assertions, `./scripts/tm.sh up` served HTTP 200, Compose configuration validated, and both wrapper scripts passed syntax checks. The inherited Composer development scripts that started persistent processes have been removed and are covered by a regression test.
+PR1 adds ULID public IDs, tenant memberships, scoped audit logs, local session authentication, tenant policy/context middleware, and `platform:bootstrap-admin`. `./scripts/tm.sh test` passes 11 tests / 69 assertions, including cross-tenant 404 and global-scope isolation coverage.
 
 ## Licence decision
 
