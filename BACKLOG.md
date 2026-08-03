@@ -1,3 +1,3 @@
 # Backlog and open questions
 
-No open questions are currently blocking PR0. The Laravel 12 dual-licence decision is recorded in `docs/security/dependency-audit.md` and governed by the amended sections 4.4 and 17.5 of the authoritative specification; the PR14 release audit will enforce it.
+No open questions are currently blocking PR2. Until PR4 introduces the salts table and rotation, the PR2 site map omits the `salt` key by owner decision; section 7.3 records the sequencing rule.

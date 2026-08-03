@@ -17,6 +17,8 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/tm-sites.php
+/storage/tm-sites.lock
 /storage/pail
 /vendor
 /_laravel_scaffold
