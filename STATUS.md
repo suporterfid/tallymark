@@ -2,6 +2,8 @@
 
 ## Current implementation unit
 
+PR11 â€” Goals & shared dashboards is in implementation on `codex/pr11-goals-shared-dashboards`; GitHub issue #26 is open. Owner authorization resolved open question 10: goals use exactly one event-name or literal URL-prefix matcher; the public view shows only all-time aggregate pageviews, sessions, and conversions without goal names; the opaque `dash_` token can be enabled, disabled, and rotated; rendered output is cached for five minutes.
+
 PR3 — Standalone collector merged as pull request #8; GitHub issue #7 is closed. PR4 — Visitor hashing & salts merged as pull request #10; GitHub issue #9 is closed. PR5 — Ingest pipeline merged as pull request #12; GitHub issue #11 is closed. PR6 — Sessionization & classification merged as pull request #14; GitHub issue #13 is closed.
 
 PR3 adds a standalone `public/px.php` with no Composer, Laravel, or database path. Isolated bare-server tests verify 204/CORS, no cookie, unknown-key drops, host validation, DNT, bots, body caps, IPv4/IPv6 and raw-user-agent suppression, URL sanitization, concurrent shard caps, GIF fallback, and p99 PHP timing. On merged `main`, `./scripts/tm.sh test` passed 16 tests / 183 assertions; Composer validation and the CI Compose configuration also passed before merge.

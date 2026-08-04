@@ -31,4 +31,17 @@ final class GoalsRealtimeTest extends TestCase
         $this->assertDatabaseHas('stats_hourly_goals', ['site_id' => $site->id, 'goal_id' => $goalId, 'hour' => '2026-08-04 12:00:00', 'conversions' => 3, 'visitors' => 1]);
         $this->assertDatabaseHas('stats_realtime_five_minutes', ['site_id' => $site->id, 'bucket' => '2026-08-04 12:25:00', 'events' => 3]);
     }
+
+    public function test_aggregation_records_a_url_prefix_goal_from_a_pageview(): void
+    {
+        $tenant = Tenant::query()->create(['name' => 'URL goal', 'slug' => 'url-goal']);
+        $site = Site::withoutGlobalScopes()->create(['tenant_id' => $tenant->id, 'name' => 'Example', 'timezone' => 'UTC', 'site_key' => 'url-goal-key']);
+        $goalId = DB::table('goals')->insertGetId(['site_id' => $site->id, 'name' => 'Thank you', 'url_pattern' => '/thank-you']);
+        $batch = IngestBatch::query()->create(['filename' => '202608041300-0.ndjson', 'status' => 'staged', 'staged_at' => '2026-08-04 13:01:00']);
+        IngestEvent::query()->create(['ingest_batch_id' => $batch->id, 'line_number' => 1, 'payload' => ['site_id' => $site->id, 'visitor_id' => 'urlgoal123456789', 'timestamp' => '2026-08-04T13:00:00+00:00', 'url' => 'https://example.test/thank-you/order', 'referrer' => null, 'event' => 'pageview', 'name' => '', 'properties' => [], 'is_bot' => false, 'device' => 'desktop', 'browser' => 'chrome', 'os' => 'linux']]);
+
+        $this->artisan('analytics:aggregate')->assertSuccessful();
+
+        $this->assertDatabaseHas('stats_hourly_goals', ['site_id' => $site->id, 'goal_id' => $goalId, 'hour' => '2026-08-04 13:00:00', 'conversions' => 1, 'visitors' => 1]);
+    }
 }
