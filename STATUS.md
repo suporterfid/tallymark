@@ -12,6 +12,8 @@ PR5 adds `analytics:ingest`, closed-buffer ordering, token-owned claim leases, b
 
 PR6 uses the owner-authorized resolution of open question 8: a zero-dependency collector classifier writes only derived bot/device/browser/OS fields. `Sessionizer`, `ReferrerNormalizer`, the internal classifier, an application-only MIT Public Suffix List parser, a versioned MPL-2.0 suffix list, and the runtime licence audit are implemented. On merged `main`, `./scripts/tm.sh test` passed 43 tests / 303 assertions; the Docker-run licence audit and strict Composer validation also passed.
 
+PR7 — Aggregation & cardinality is awaiting final re-review; GitHub issue: #15. It adds all hourly dimensions, unique keys, idempotent staged-batch aggregation, a pure session-state transition with persistent cross-batch correction, cardinality folding, self-referral normalization, and durable cap warnings. `./scripts/tm.sh test` passed 55 tests / 347 assertions; the Docker-run runtime licence audit also passed.
+
 ## Licence decision
 
 The specification was amended with owner authorization: a dual-licensed dependency is acceptable when it offers a permitted option, TallyMark selects that option, and the selection is recorded from its authoritative licence file. `nette/schema` and `nette/utils` are used under their New BSD option; the audit record is in `docs/security/dependency-audit.md`.
