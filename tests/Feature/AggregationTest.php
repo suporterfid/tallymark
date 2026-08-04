@@ -74,7 +74,7 @@ final class AggregationTest extends TestCase
 
         $this->artisan('analytics:aggregate')->assertSuccessful();
 
-        $this->assertDatabaseHas('stats_hourly_referrers', ['site_id' => 7, 'referrer' => 'example.org', 'pageviews' => 1, 'visitors' => 1]);
+        $this->assertDatabaseHas('stats_hourly_referrers', ['site_id' => 7, 'referrer' => 'search', 'pageviews' => 1, 'visitors' => 1]);
         $this->assertDatabaseHas('stats_hourly_countries', ['site_id' => 7, 'country' => 'unknown', 'pageviews' => 1, 'visitors' => 1]);
         $this->assertDatabaseHas('stats_hourly_devices', ['site_id' => 7, 'device' => 'desktop', 'browser' => 'chrome', 'os' => 'linux', 'pageviews' => 1, 'visitors' => 1]);
         $this->assertDatabaseHas('stats_hourly_campaigns', ['site_id' => 7, 'source' => 'search', 'medium' => 'cpc', 'campaign' => 'launch', 'pageviews' => 1, 'visitors' => 1]);
@@ -92,6 +92,60 @@ final class AggregationTest extends TestCase
         $this->artisan('analytics:aggregate')->assertSuccessful();
 
         $this->assertDatabaseHas('stats_hourly_totals', ['site_id' => 7, 'hour' => '2026-08-04 12:00:00', 'sessions' => 1, 'bounces' => 0, 'duration_sum' => 300]);
+    }
+
+    public function test_it_applies_session_corrections_to_the_start_hour_when_the_next_pageview_is_in_a_later_hour(): void
+    {
+        $first = $this->stagedBatch();
+        $this->stageEvent($first, 1, '/pricing', '2026-08-04T12:59:00+00:00');
+        $this->artisan('analytics:aggregate')->assertSuccessful();
+        $second = IngestBatch::query()->create(['filename' => '202608041301-0.ndjson', 'status' => 'staged', 'staged_at' => '2026-08-04 13:02:00']);
+        $this->stageEvent($second, 1, '/pricing', '2026-08-04T13:01:00+00:00');
+        $this->artisan('analytics:aggregate')->assertSuccessful();
+
+        $this->assertDatabaseHas('stats_hourly_totals', ['site_id' => 7, 'hour' => '2026-08-04 12:00:00', 'sessions' => 1, 'bounces' => 0, 'duration_sum' => 120]);
+    }
+
+    public function test_a_custom_event_extends_the_session_gap_without_counting_as_a_pageview(): void
+    {
+        $batch = $this->stagedBatch();
+        $this->stageEvent($batch, 1, '/pricing', '2026-08-04T12:00:00+00:00');
+        $this->stageEvent($batch, 2, '/pricing', '2026-08-04T12:20:00+00:00', null, 'signup');
+        $this->stageEvent($batch, 3, '/pricing', '2026-08-04T12:40:00+00:00');
+        $this->artisan('analytics:aggregate')->assertSuccessful();
+
+        $this->assertDatabaseHas('stats_hourly_totals', ['site_id' => 7, 'sessions' => 1, 'bounces' => 0, 'duration_sum' => 2400]);
+    }
+
+    public function test_a_custom_event_before_the_first_pageview_records_the_session_at_its_start_hour(): void
+    {
+        $batch = $this->stagedBatch();
+        $this->stageEvent($batch, 1, '/pricing', '2026-08-04T12:00:00+00:00', null, 'signup');
+        $this->stageEvent($batch, 2, '/pricing', '2026-08-04T12:05:00+00:00');
+
+        $this->artisan('analytics:aggregate')->assertSuccessful();
+
+        $this->assertDatabaseHas('stats_hourly_totals', [
+            'site_id' => 7,
+            'hour' => '2026-08-04 12:00:00',
+            'sessions' => 1,
+            'bounces' => 1,
+            'duration_sum' => 0,
+        ]);
+    }
+
+    public function test_it_classifies_self_referrals_as_direct(): void
+    {
+        $batch = $this->stagedBatch();
+        $this->stageEvent($batch, 1, '/pricing', '2026-08-04T12:00:00+00:00', 'https://example.test/previous');
+
+        $this->artisan('analytics:aggregate')->assertSuccessful();
+
+        $this->assertDatabaseHas('stats_hourly_referrers', [
+            'site_id' => 7,
+            'referrer' => 'direct',
+            'pageviews' => 1,
+        ]);
     }
 
     private function stagedBatch(): IngestBatch
