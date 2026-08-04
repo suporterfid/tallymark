@@ -898,6 +898,12 @@ Funnels; limited cross-dimension filtering via a narrow pre-computed combination
 
 ---
 
+### 22.1–22.7 Owner decisions
+
+The owner resolved questions 1–7 as follows: retain file buffering and validate it in PR15; retain exact daily visitors with retention; make sampling opt-in and visibly labelled; defer the first-party proxy to post-v0; use edge-header geo with `unknown` fallback; keep GrandpaSSOn inbound disabled until [GrandpaSSOn #115](https://github.com/suporterfid/grandpasson/issues/115) delivers the three analytics scopes; and retain four buffer shards while PR15 documents inode arithmetic and warning coverage. These decisions supersede the open wording above.
+
+---
+
 ## 23. Repository layout (target)
 
 ```text

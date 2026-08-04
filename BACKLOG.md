@@ -6,6 +6,16 @@ The owner chose a UTC-midnight rotation boundary for PR4. A missed rotation writ
 
 Until PR4 introduces the salts table and rotation, the PR2 site map omits the `salt` key by owner decision; section 7.3 records the sequencing rule.
 
+## Resolved questions 1–7
+
+1. Keep the file buffer. PR15's load fixture must measure and record the buffer-versus-direct-UPSERT comparison before any reconsideration.
+2. Keep exact daily visitor counting through `daily_visitors`, with the specified retention cap. PR8 now materializes the exact per-site daily set and writes that count into daily totals.
+3. Sampling is opt-in only. Any sampled figure must be labelled everywhere it appears.
+4. A first-party collector proxy is post-v0; the collector contract remains stable for a future proxy.
+5. Country resolution defaults to an edge header, falling back to `unknown`; no geo database is vendored. An operator-supplied database remains an opt-in future path.
+6. GrandpaSSOn inbound mode remains disabled until the broker owns and ships `analytics:read`, `analytics:write`, and `analytics:callback`; [GrandpaSSOn #115](https://github.com/suporterfid/grandpasson/issues/115) tracks that prerequisite, and PR12 must use its fake-backed, flags-off mode until then.
+7. Keep four buffer shards by default. Document the inode arithmetic and add orphan-accumulation warning coverage with the PR15 load/capacity work.
+
 ## Resolved question 8 — PR6 bot-classification input
 
 Section 10.2 requires `jaybizzle/crawler-detect` to classify bots at ingest. Section 8.2 prohibits the raw User-Agent from being written to the buffer, database, logs, or cache and says it exists only inside one collector invocation. Section 4.5 prohibits `public/px.php` from Composer autoloading, so the collector cannot load that dependency either. The current PR3 collector deliberately discards the User-Agent after its cheap prefilter, and PR5's staged `EventLine` contains no User-Agent.
