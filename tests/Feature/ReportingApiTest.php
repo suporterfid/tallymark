@@ -30,6 +30,10 @@ final class ReportingApiTest extends TestCase
             'site_id' => $site->id, 'hour' => '2026-08-04 12:00:00', 'pageviews' => 3,
             'visitors' => 2, 'sessions' => 2, 'bounces' => 1, 'duration_sum' => 120,
         ]);
+        DB::table('stats_hourly_totals')->insert([
+            'site_id' => $site->id, 'hour' => '2026-08-03 12:00:00', 'pageviews' => 2,
+            'visitors' => 1, 'sessions' => 1, 'bounces' => 1, 'duration_sum' => 30,
+        ]);
 
         DB::flushQueryLog();
         DB::enableQueryLog();
@@ -39,8 +43,13 @@ final class ReportingApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.pageviews', 3)
             ->assertJsonPath('data.visitors', 2)
+            ->assertJsonPath('data.views_per_session', 1.5)
+            ->assertJsonPath('data.bounce_rate', 50)
+            ->assertJsonPath('data.average_session_duration', 60)
+            ->assertJsonPath('comparison.pageviews', 2)
+            ->assertJsonPath('comparison.sessions', 1)
             ->assertJsonPath('meta.visitor_label', 'visits (approximate)');
-        self::assertLessThanOrEqual(5, count($queries));
+        self::assertLessThanOrEqual(6, count($queries));
     }
 
     public function test_dashboard_returns_a_bounded_page_breakdown_from_hourly_aggregates(): void
