@@ -96,15 +96,30 @@ final class AggregationRunner
     private function aggregateGoals(array $events): void
     {
         $groups = [];
+        $siteIds = array_values(array_unique(array_map(static fn (array $event): int => (int) $event['site_id'], $events)));
+        $goalsBySite = DB::table('goals')
+            ->whereIn('site_id', $siteIds)
+            ->where('is_enabled', true)
+            ->get(['id', 'site_id', 'event_name', 'url_pattern'])
+            ->groupBy('site_id');
+
         foreach ($events as $event) {
-            if (($event['is_bot'] ?? false) || $event['event'] === 'pageview') {
+            if (($event['is_bot'] ?? false)) {
                 continue;
             }
 
             $eventName = (string) (($event['name'] ?? '') ?: $event['event']);
             $hour = (new \DateTimeImmutable((string) $event['timestamp']))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:00:00');
-            $goals = DB::table('goals')->where(['site_id' => (int) $event['site_id'], 'event_name' => $eventName])->get(['id']);
-            foreach ($goals as $goal) {
+            $path = (string) (parse_url((string) $event['url'], PHP_URL_PATH) ?: '/');
+            foreach ($goalsBySite->get((int) $event['site_id'], []) as $goal) {
+                $matchesEvent = $event['event'] !== 'pageview' && $goal->event_name === $eventName;
+                $matchesUrl = $event['event'] === 'pageview'
+                    && is_string($goal->url_pattern)
+                    && str_starts_with($path, $goal->url_pattern);
+                if (! $matchesEvent && ! $matchesUrl) {
+                    continue;
+                }
+
                 $groups[$goal->id.'|'.$hour]['goal_id'] = (int) $goal->id;
                 $groups[$goal->id.'|'.$hour]['site_id'] = (int) $event['site_id'];
                 $groups[$goal->id.'|'.$hour]['hour'] = $hour;

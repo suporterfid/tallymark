@@ -48,4 +48,14 @@ class Site extends Model
     {
         return $this->hasMany(SiteHost::class);
     }
+
+    public function goals(): HasMany
+    {
+        return $this->hasMany(Goal::class);
+    }
+
+    public function sharedDashboard(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(SharedDashboard::class);
+    }
 }

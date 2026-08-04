@@ -1,5 +1,11 @@
 # Backlog and open questions
 
+## Resolved question 10 — PR11 goal management and public-dashboard contract
+
+Section 20.0 leaves PR11 with “any remaining goal-management features”, but §§6, 11, 12, and 19 do not define the management contract needed to implement it: whether goals support event matching, URL matching, or both; the URL-pattern syntax and precedence; CRUD and rotation/disable behaviour; or the public-dashboard token lifecycle and cache duration. The existing PR9 minimum schema only supports `event_name` goals.
+
+Owner decision: each goal uses exactly one event-name or literal URL-prefix matcher. A shared dashboard shows only all-time aggregate pageviews, sessions, and conversions, never names or definitions of goals. Its opaque `dash_` token is enableable, disableable, and rotatable; the rendered output is cached for five minutes.
+
 No open questions are currently blocking PR11. The owner authorized the sustainable choice: PR5 commits a sanitized, transient `EventLine` to an `ingest_events` staging store linked to `ingest_batches`, then deletes the buffer only after that transaction commits. PR6/PR7 consume and remove staged events during classification and aggregation; the store has no IP or raw User-Agent fields and is not an export surface.
 
 ## PR10 tracking-script delivery choice
