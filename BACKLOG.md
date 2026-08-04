@@ -22,9 +22,9 @@ Section 10.2 requires `jaybizzle/crawler-detect` to classify bots at ingest. Sec
 
 Owner decision: v0 uses a small zero-dependency collector classifier and writes only derived bot/device/browser/OS fields. The specification and issue #13 record this amendment. Retaining or buffering the raw User-Agent remains prohibited.
 
-## Follow-up — Composer security advisory feed
+## Resolved follow-up — Composer security advisory feed
 
-During PR6, `composer audit --locked --no-interaction` could not query Packagist because the advisory endpoint timed out. Composer had reported two advisories affecting one existing package during installation, but no advisory detail was retrieved or treated as verified. Re-run the network-backed audit during PR14's release work and record the actual package/advisory result before shipping a release.
+The network-backed audit identified and remediated two advisories in transitive `guzzlehttp/guzzle` 7.15.1: PKSA-gcrk-3vtt-1r14 / CVE-2026-69246 (high) and PKSA-cnw1-2ytm-cgr8 / CVE-2026-69245 (medium). The lockfile now pins 7.15.2, which is outside both affected ranges. The exact evidence and the fail-closed release-gate policy are recorded in `docs/security/composer-advisories.md`.
 
 ## Open question 9 — PR9 goals and real-time screen sequencing
 

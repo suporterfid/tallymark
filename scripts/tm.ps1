@@ -65,6 +65,27 @@ function Invoke-ComposerInstallWithRetry {
     }
 }
 
+function Invoke-ComposerAuditWithRetry {
+    $attempt = 1
+    $delaySeconds = 5
+
+    while ($attempt -le 3) {
+        $exitCode = Invoke-ComposeCore @('run', '--rm', 'app', 'composer', 'audit', '--locked', '--no-interaction', '--no-cache')
+        if ($exitCode -eq 0) {
+            return
+        }
+
+        if ($attempt -eq 3) {
+            throw 'Composer security audit could not be verified after 3 attempts.'
+        }
+
+        Write-Warning "Composer security audit attempt $attempt failed; retrying in ${delaySeconds}s..."
+        Start-Sleep -Seconds $delaySeconds
+        $delaySeconds *= 2
+        $attempt++
+    }
+}
+
 function Show-Usage {
     @'
 TallyMark Docker toolchain
@@ -142,6 +163,7 @@ function Invoke-Load {
 
 function Invoke-Release {
     Invoke-Compose @('run', '--rm', 'app', 'php', 'scripts/license-audit.php')
+    Invoke-ComposerAuditWithRetry
 
     if (-not (Test-Path 'docker/release/Dockerfile')) { throw 'The release pipeline is introduced in PR14.' }
     New-Item -ItemType Directory -Force -Path 'dist' | Out-Null

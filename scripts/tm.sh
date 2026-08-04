@@ -56,6 +56,28 @@ composer_install_with_retry() {
   done
 }
 
+composer_audit_with_retry() {
+  local attempt=1
+  local delay=5
+  local max_attempts=3
+
+  while (( attempt <= max_attempts )); do
+    if compose run --rm app composer audit --locked --no-interaction --no-cache; then
+      return 0
+    fi
+
+    if (( attempt == max_attempts )); then
+      echo "Composer security audit could not be verified after ${max_attempts} attempts." >&2
+      return 1
+    fi
+
+    echo "Composer security audit attempt ${attempt} failed; retrying in ${delay}s..." >&2
+    sleep "$delay"
+    delay=$((delay * 2))
+    attempt=$((attempt + 1))
+  done
+}
+
 usage() {
   cat <<'EOF'
 TallyMark Docker toolchain
@@ -151,6 +173,7 @@ cmd_load() {
 
 cmd_release() {
   compose run --rm app php scripts/license-audit.php
+  composer_audit_with_retry
 
   if [[ ! -f docker/release/Dockerfile ]]; then
     echo "The release pipeline is introduced in PR14." >&2
