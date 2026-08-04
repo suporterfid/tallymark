@@ -36,6 +36,7 @@ final class RollupService
             }
 
             $this->rollupVisitors($day);
+            $this->replaceDailyVisitorCounts($day);
             $this->recordHeartbeat();
         });
     }
@@ -78,6 +79,21 @@ final class RollupService
         }
 
         DB::table('session_states')->where('day', $day)->delete();
+    }
+
+    private function replaceDailyVisitorCounts(string $day): void
+    {
+        $counts = DB::table('daily_visitors')
+            ->selectRaw('site_id, count(*) as visitors')
+            ->where('day', $day)
+            ->groupBy('site_id')
+            ->get();
+
+        foreach ($counts as $count) {
+            DB::table('stats_daily_totals')
+                ->where(['site_id' => $count->site_id, 'day' => $day])
+                ->update(['visitors' => (int) $count->visitors]);
+        }
     }
 
     private function assertClosedDay(string $day): void

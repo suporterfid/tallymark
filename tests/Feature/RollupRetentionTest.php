@@ -32,7 +32,7 @@ final class RollupRetentionTest extends TestCase
             'site_id' => 7,
             'day' => '2026-08-03',
             'pageviews' => 7,
-            'visitors' => 4,
+            'visitors' => 2,
             'sessions' => 3,
             'bounces' => 1,
             'duration_sum' => 300,
