@@ -14,6 +14,10 @@ TallyMark is MIT licensed. A runtime dependency is acceptable only when it can b
 
 Both upstream licence files grant a choice between the New BSD licence and GPL v2/v3, and recommend BSD. TallyMark elects the New BSD option for both packages. This does not permit GPL-only, LGPL-only, AGPL-only, or SSPL-only dependencies.
 
+## Dashboard build dependencies
+
+`frontend/package-lock.json` pins the dashboard build. Its direct dependencies are `vue`, `vue-i18n`, `@vitejs/plugin-vue`, and `vue-tsc` (MIT), plus `typescript` (Apache-2.0). They are application/dashboard-only: the standalone collector does not load Node, Vite, or any frontend package.
+
 ## Enforcement
 
 `scripts/license-audit.php` checks the locked runtime packages against the permitted licence set and requires every dual-licensed package to have a selected permissive option in `config/licence-selections.php`. Run it through the Docker-only toolchain:
