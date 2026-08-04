@@ -850,6 +850,10 @@ One PR unit at a time. Each **MUST** leave `main` green with `tm test` passing, 
 | **PR15** | Load fixture & capacity | Synthetic buffer generator, `tm load`, documented throughput | §13.1 targets met and recorded; regression baseline committed |
 | **PR16** | E2E, a11y, privacy docs | Playwright (demosite → collector → ingest → dashboard), a11y sweep, `docs/privacy.md`, acceptance checklist | Suite green against compose; privacy doc states properties without legal overclaim |
 
+### 20.0 PR9/PR11 owner-authorized sequencing amendment
+
+PR9 includes the minimum `goals` model and conversion reporting needed for the §19 Goals screen, plus five-minute real-time aggregates for the honest “last 30 minutes” screen. PR11 retains shared dashboards and any remaining goal-management features. This supersedes the narrower PR9/PR11 split in the table above.
+
 ### 20.1 Sequencing notes
 
 - **PR3 and PR4 before PR5.** The buffer format and the visitor hash are the contract everything downstream depends on; changing them later invalidates stored data.

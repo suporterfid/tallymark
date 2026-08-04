@@ -28,4 +28,4 @@ During PR6, `composer audit --locked --no-interaction` could not query Packagist
 
 ## Open question 9 — PR9 goals and real-time screen sequencing
 
-Section 19 and PR9 require Goals and a real-time-ish “last 30 minutes” screen, but §20 schedules the Goals data model and conversion metrics for PR11. The only retained reporting data available in PR9 is hourly aggregation, which cannot truthfully represent a 30-minute window. Choose one: move the required Goal model/metrics and a sufficiently granular real-time aggregate into PR9; defer the two screens to PR11 and amend PR9’s deliverable; or explicitly define a labelled hourly approximation. PR9 remains unmerged until this is resolved.
+Resolved by owner authorization: move the minimum Goal model/conversion reporting and a five-minute real-time aggregate into PR9. PR11 retains shared dashboards and any remaining goal management features. The five-minute data powers the labelled “last 30 minutes” report without fabricating an hourly window.

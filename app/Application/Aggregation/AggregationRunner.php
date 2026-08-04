@@ -88,6 +88,56 @@ final class AggregationRunner
         foreach ($customGroups as $group) {
             $this->dimension($group['site_id'], $group['hour'], $group['events'], 'stats_hourly_events', fn ($e) => ['event_name' => (string) ($e['name'] ?: $e['event'])], 'count');
         }
+        $this->aggregateGoals($events);
+        $this->aggregateRealtime($events);
+    }
+
+    /** @param list<array<string,mixed>> $events */
+    private function aggregateGoals(array $events): void
+    {
+        $groups = [];
+        foreach ($events as $event) {
+            if (($event['is_bot'] ?? false) || $event['event'] === 'pageview') {
+                continue;
+            }
+
+            $eventName = (string) (($event['name'] ?? '') ?: $event['event']);
+            $hour = (new \DateTimeImmutable((string) $event['timestamp']))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:00:00');
+            $goals = DB::table('goals')->where(['site_id' => (int) $event['site_id'], 'event_name' => $eventName])->get(['id']);
+            foreach ($goals as $goal) {
+                $groups[$goal->id.'|'.$hour]['goal_id'] = (int) $goal->id;
+                $groups[$goal->id.'|'.$hour]['site_id'] = (int) $event['site_id'];
+                $groups[$goal->id.'|'.$hour]['hour'] = $hour;
+                $groups[$goal->id.'|'.$hour]['events'][] = $event;
+            }
+        }
+
+        foreach ($groups as $group) {
+            $this->add('stats_hourly_goals', ['site_id' => $group['site_id'], 'goal_id' => $group['goal_id'], 'hour' => $group['hour']], ['conversions' => count($group['events']), 'visitors' => count(array_unique(array_column($group['events'], 'visitor_id')))]);
+        }
+    }
+
+    /** @param list<array<string,mixed>> $events */
+    private function aggregateRealtime(array $events): void
+    {
+        $groups = [];
+        foreach ($events as $event) {
+            if (($event['is_bot'] ?? false)) {
+                continue;
+            }
+
+            $at = (new \DateTimeImmutable((string) $event['timestamp']))->setTimezone(new \DateTimeZone('UTC'));
+            $bucket = $at->setTime((int) $at->format('H'), intdiv((int) $at->format('i'), 5) * 5)->format('Y-m-d H:i:00');
+            $key = $event['site_id'].'|'.$bucket;
+            $groups[$key]['site_id'] = (int) $event['site_id'];
+            $groups[$key]['bucket'] = $bucket;
+            $groups[$key]['events'][] = $event;
+        }
+
+        foreach ($groups as $group) {
+            $pageviews = count(array_filter($group['events'], static fn (array $event): bool => $event['event'] === 'pageview'));
+            $this->add('stats_realtime_five_minutes', ['site_id' => $group['site_id'], 'bucket' => $group['bucket']], ['pageviews' => $pageviews, 'events' => count($group['events']), 'visitors' => count(array_unique(array_column($group['events'], 'visitor_id')))]);
+        }
     }
 
     /** @param list<array<string,mixed>> $events @return array<string,array{sessions:int,bounces:int,duration_sum:int}> */
