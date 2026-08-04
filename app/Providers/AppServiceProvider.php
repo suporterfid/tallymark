@@ -12,6 +12,9 @@ use App\Application\GrandpaSson\IntrospectionClientInterface;
 use App\Application\GrandpaSson\SessionExchangeClientInterface;
 use App\Application\Sites\SiteMapGenerator;
 use App\Application\Sites\SiteMapWriter;
+use App\Application\TaskConnect\HttpTaskConnectTaskClient;
+use App\Application\TaskConnect\TaskConnectDigestDelegator;
+use App\Application\TaskConnect\TaskConnectTaskClientInterface;
 use App\Application\Tenancy\TenantContext;
 use App\Domain\Analytics\RegistrableDomainResolver;
 use App\Domain\Shared\Clock;
@@ -48,6 +51,8 @@ class AppServiceProvider extends ServiceProvider
             Rules::fromPath(resource_path('data/public_suffix_list.dat')),
         ));
         $this->app->bind(SiteMapWriter::class, SiteMapGenerator::class);
+        $this->app->bind(TaskConnectTaskClientInterface::class, HttpTaskConnectTaskClient::class);
+        $this->app->bind(TaskConnectDigestDelegator::class);
     }
 
     /**

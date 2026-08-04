@@ -1,5 +1,14 @@
 # Backlog and open questions
 
+## PR13 implementation decision — TaskConnect digest seam
+
+The current v0 implementation has no `scheduled_reports` creator or scheduler
+to attach to an outbound task. PR13 therefore exposes
+`TaskConnectDigestDelegator` as the tested application seam for that future
+caller instead of inventing a schedule UI or a default destination. Operators
+explicitly configure every outbound target; conversion automation is disabled
+by default. This does not block PR13's optional integration contract.
+
 ## Resolved question 10 — PR11 goal management and public-dashboard contract
 
 Section 20.0 leaves PR11 with “any remaining goal-management features”, but §§6, 11, 12, and 19 do not define the management contract needed to implement it: whether goals support event matching, URL matching, or both; the URL-pattern syntax and precedence; CRUD and rotation/disable behaviour; or the public-dashboard token lifecycle and cache duration. The existing PR9 minimum schema only supports `event_name` goals.

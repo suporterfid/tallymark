@@ -13,6 +13,8 @@ return [
 
     'machine_client_id' => env('GRANDPASSON_MACHINE_CLIENT_ID', ''),
     'machine_client_secret' => env('GRANDPASSON_MACHINE_CLIENT_SECRET', ''),
+    'outbound_client_id' => env('GRANDPASSON_OUTBOUND_CLIENT_ID', ''),
+    'outbound_client_secret' => env('GRANDPASSON_OUTBOUND_CLIENT_SECRET', ''),
     'introspect_url' => env('GRANDPASSON_INTROSPECT_URL', env('GRANDPASSON_BASE_URL')
         ? rtrim((string) env('GRANDPASSON_BASE_URL'), '/').'/oauth/introspect'
         : ''),
