@@ -16,6 +16,8 @@ PR7 — Aggregation & cardinality merged as pull request #16; GitHub issue #15 i
 
 PR8 — Rollups & retention merged as pull request #18; GitHub issue #17 is closed. It adds daily aggregate tables, exact `daily_visitors` materialized from the closed daily session state, idempotent `analytics:rollup`, and chunked retention that deletes hourly rows only after their matching daily rollup exists. On the reviewed branch, `./scripts/tm.sh test` passed 57 tests / 356 assertions and the Docker-run runtime licence audit passed; final review found no blockers.
 
+PR9 — Dashboard API & SPA is ready for review; GitHub issue: #19. It adds bounded reporting queries over hourly aggregates, dimension breakdowns, an authenticated SPA entrypoint, Vue/TypeScript screens, and complete `en`/`pt-BR` text with accessible table alternatives and approximation/timezone labels. `./scripts/tm.sh test` passed 60 tests / 375 assertions; `vue-tsc`, the Vite build, and the Docker-run runtime licence audit also passed.
+
 ## Licence decision
 
 The specification was amended with owner authorization: a dual-licensed dependency is acceptable when it offers a permitted option, TallyMark selects that option, and the selection is recorded from its authoritative licence file. `nette/schema` and `nette/utils` are used under their New BSD option; the audit record is in `docs/security/dependency-audit.md`.
