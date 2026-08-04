@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Application\Ingest\IngestRunner;
+use App\Application\Ingest\BufferReader;
 use App\Application\Ingest\IngestClaimLease;
+use App\Application\Ingest\IngestRunner;
 use App\Domain\Shared\Clock;
 use App\Infrastructure\Persistence\Eloquent\IngestBatch;
+use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FixedClock;
 use Tests\TestCase;
-use DateTimeImmutable;
 
 final class IngestPipelineTest extends TestCase
 {
@@ -58,6 +59,7 @@ final class IngestPipelineTest extends TestCase
             'malformed_lines' => 1,
         ]);
         $this->assertDatabaseCount('ingest_events', 1);
+        $this->assertDatabaseHas('system_heartbeats', ['name' => 'analytics:ingest', 'status' => 'healthy', 'last_seen_at' => '2026-08-04 12:01:00']);
         self::assertFileDoesNotExist($closed);
         self::assertFileExists($open);
 
@@ -87,9 +89,29 @@ final class IngestPipelineTest extends TestCase
         $this->assertDatabaseHas('ingest_batches', ['filename' => '202608041200-0.ndjson', 'status' => 'processing']);
     }
 
+    public function test_a_failed_ingest_run_records_an_alarm_heartbeat(): void
+    {
+        $this->app->instance(Clock::class, new FixedClock(new DateTimeImmutable('2026-08-04 12:01:00 UTC')));
+        $this->app->instance(BufferReader::class, new class extends BufferReader
+        {
+            public function closedFiles(DateTimeImmutable $now): array
+            {
+                throw new \RuntimeException('Buffer unavailable');
+            }
+        });
+
+        try {
+            $this->app->make(IngestRunner::class)->run();
+            self::fail('Expected the ingest failure to be rethrown.');
+        } catch (\RuntimeException) {
+            $this->assertDatabaseHas('system_heartbeats', ['name' => 'analytics:ingest', 'status' => 'alarm', 'last_seen_at' => '2026-08-04 12:01:00', 'message' => 'Ingest run failed.']);
+        }
+    }
+
     public function test_ingest_releases_a_partial_buffer_when_its_tick_budget_is_exhausted(): void
     {
-        $clock = new class implements Clock {
+        $clock = new class implements Clock
+        {
             /** @var list<DateTimeImmutable> */
             private array $moments;
 
@@ -154,7 +176,8 @@ final class IngestPipelineTest extends TestCase
 
     public function test_a_resumed_buffer_checks_its_budget_while_skipping_checkpointed_lines(): void
     {
-        $clock = new class implements Clock {
+        $clock = new class implements Clock
+        {
             /** @var list<DateTimeImmutable> */
             private array $moments;
 

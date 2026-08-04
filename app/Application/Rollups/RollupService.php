@@ -21,6 +21,7 @@ final class RollupService
         'stats_hourly_devices' => ['daily' => 'stats_daily_devices', 'dimensions' => ['device', 'browser', 'os'], 'metrics' => ['pageviews', 'visitors']],
         'stats_hourly_campaigns' => ['daily' => 'stats_daily_campaigns', 'dimensions' => ['source', 'medium', 'campaign'], 'metrics' => ['pageviews', 'visitors']],
         'stats_hourly_events' => ['daily' => 'stats_daily_events', 'dimensions' => ['event_name'], 'metrics' => ['count', 'visitors']],
+        'stats_hourly_goals' => ['daily' => 'stats_daily_goals', 'dimensions' => ['goal_id'], 'metrics' => ['conversions', 'visitors']],
     ];
 
     public function __construct(private readonly Clock $clock) {}

@@ -23,6 +23,7 @@ final class RetentionService
         'stats_hourly_devices' => 'stats_daily_devices',
         'stats_hourly_campaigns' => 'stats_daily_campaigns',
         'stats_hourly_events' => 'stats_daily_events',
+        'stats_hourly_goals' => 'stats_daily_goals',
     ];
 
     public function __construct(private readonly Clock $clock) {}
@@ -35,6 +36,10 @@ final class RetentionService
         foreach (array_values(self::HOURLY_TABLES) as $daily) {
             $this->deleteByDay($daily, 'day', $this->cutoff('RETENTION_STATS_DAILY_DAYS', 1825));
         }
+        DB::table('stats_realtime_five_minutes')
+            ->where('bucket', '<', $this->now()->sub(new DateInterval('PT48H'))->format('Y-m-d H:i:00'))
+            ->limit(self::CHUNK_SIZE)
+            ->delete();
     }
 
     private function pruneHourly(): void

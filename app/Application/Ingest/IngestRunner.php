@@ -23,14 +23,34 @@ final class IngestRunner
 
     public function run(): void
     {
-        $budget = new TickBudget($this->clock, $this->budgetSeconds());
+        $failed = false;
+        try {
+            $budget = new TickBudget($this->clock, $this->budgetSeconds());
 
-        foreach ($this->bufferReader->closedFiles($this->clock->now()) as $path) {
-            if ($budget->exhausted()) {
-                return;
+            foreach ($this->bufferReader->closedFiles($this->clock->now()) as $path) {
+                if ($budget->exhausted()) {
+                    return;
+                }
+
+                $this->stage($path, $budget);
             }
+        } catch (\Throwable $exception) {
+            $failed = true;
 
-            $this->stage($path, $budget);
+            throw $exception;
+        } finally {
+            $now = $this->clock->now();
+            DB::table('system_heartbeats')->updateOrInsert(
+                ['name' => 'analytics:ingest'],
+                [
+                    'status' => $failed ? 'alarm' : 'healthy',
+                    'last_seen_at' => $now,
+                    'last_error_at' => $failed ? $now : null,
+                    'message' => $failed ? 'Ingest run failed.' : null,
+                    'updated_at' => $now,
+                    'created_at' => $now,
+                ],
+            );
         }
     }
 

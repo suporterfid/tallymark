@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Domain\Shared\Clock;
+use App\Infrastructure\Persistence\Eloquent\Site;
+use App\Infrastructure\Persistence\Eloquent\Tenant;
 use DateTimeImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -60,6 +62,26 @@ final class RollupRetentionTest extends TestCase
         }
 
         $this->assertDatabaseMissing('stats_hourly_totals', ['site_id' => 7, 'hour' => '2026-08-01 10:00:00']);
+    }
+
+    public function test_rollup_and_retention_cover_goal_aggregates(): void
+    {
+        $this->app->instance(Clock::class, new FixedClock(new DateTimeImmutable('2026-08-04 00:10:00 UTC')));
+        $tenant = Tenant::query()->create(['name' => 'Example', 'slug' => 'goal-rollup']);
+        $site = Site::withoutGlobalScopes()->create(['tenant_id' => $tenant->id, 'name' => 'Example', 'timezone' => 'UTC', 'site_key' => 'goal-rollup-key']);
+        $goalId = DB::table('goals')->insertGetId(['site_id' => $site->id, 'name' => 'Signup', 'event_name' => 'signup']);
+        DB::table('stats_hourly_goals')->insert(['site_id' => $site->id, 'goal_id' => $goalId, 'hour' => '2026-08-01 10:00:00', 'conversions' => 3, 'visitors' => 2]);
+
+        $this->artisan('analytics:rollup', ['--day' => '2026-08-01'])->assertSuccessful();
+        $this->assertDatabaseHas('stats_daily_goals', ['site_id' => $site->id, 'goal_id' => $goalId, 'day' => '2026-08-01', 'conversions' => 3, 'visitors' => 2]);
+
+        putenv('RETENTION_STATS_HOURLY_DAYS=1');
+        try {
+            $this->artisan('analytics:maintenance')->assertSuccessful();
+            $this->assertDatabaseMissing('stats_hourly_goals', ['site_id' => $site->id, 'goal_id' => $goalId, 'hour' => '2026-08-01 10:00:00']);
+        } finally {
+            putenv('RETENTION_STATS_HOURLY_DAYS');
+        }
     }
 
     private function hourlyTotals(string $hour, int $pageviews, int $visitors, int $sessions, int $bounces, int $durationSum): void

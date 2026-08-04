@@ -6,7 +6,7 @@ namespace App\Application\Ingest;
 
 use DateTimeImmutable;
 
-final class BufferReader
+class BufferReader
 {
     /** @return list<string> */
     public function closedFiles(DateTimeImmutable $now): array
