@@ -40,7 +40,7 @@ final class ReportingApiTest extends TestCase
             ->assertJsonPath('data.pageviews', 3)
             ->assertJsonPath('data.visitors', 2)
             ->assertJsonPath('meta.visitor_label', 'visits (approximate)');
-        self::assertLessThanOrEqual(4, count($queries));
+        self::assertLessThanOrEqual(5, count($queries));
     }
 
     public function test_dashboard_returns_a_bounded_page_breakdown_from_hourly_aggregates(): void
@@ -56,6 +56,20 @@ final class ReportingApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.breakdown.0.key', '/pricing')
             ->assertJsonPath('data.breakdown.0.pageviews', 5);
+    }
+
+    public function test_dashboard_uses_exact_daily_visitors_for_a_closed_full_day(): void
+    {
+        [$tenant, $user] = $this->tenantWithMember();
+        $site = Site::withoutGlobalScopes()->create(['tenant_id' => $tenant->id, 'name' => 'Example', 'timezone' => 'America/Sao_Paulo', 'site_key' => 'daily-site-key']);
+        DB::table('stats_daily_totals')->insert(['site_id' => $site->id, 'day' => '2026-08-03', 'pageviews' => 7, 'visitors' => 2, 'sessions' => 3, 'bounces' => 1, 'duration_sum' => 300]);
+
+        $this->actingAs($user)->getJson('/api/v1/tenants/'.$tenant->public_id.'/sites/'.$site->public_id.'/report?from=2026-08-03&to=2026-08-03')
+            ->assertOk()
+            ->assertJsonPath('data.pageviews', 7)
+            ->assertJsonPath('data.visitors', 2)
+            ->assertJsonPath('meta.visitor_label', 'visitors')
+            ->assertJsonPath('meta.timezone', 'America/Sao_Paulo');
     }
 
     public function test_dashboard_returns_referrer_country_device_campaign_and_event_breakdowns_from_aggregates(): void

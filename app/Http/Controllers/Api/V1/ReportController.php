@@ -27,7 +27,10 @@ final class ReportController extends Controller
     {
         $range = $request->validate(['from' => ['required', 'date'], 'to' => ['required', 'date', 'after_or_equal:from']]);
         $site = Site::withoutGlobalScopes()->where(['tenant_id' => $tenant->id, 'public_id' => $siteId])->firstOrFail();
-        $metrics = DB::table('stats_hourly_totals')
+        $daily = $range['from'] === $range['to']
+            ? DB::table('stats_daily_totals')->where(['site_id' => $site->id, 'day' => $range['from']])->first()
+            : null;
+        $metrics = $daily ?? DB::table('stats_hourly_totals')
             ->where('site_id', $site->id)
             ->whereBetween('hour', [$range['from'].' 00:00:00', $range['to'].' 23:59:59'])
             ->selectRaw('coalesce(sum(pageviews), 0) as pageviews, coalesce(sum(visitors), 0) as visitors, coalesce(sum(sessions), 0) as sessions, coalesce(sum(bounces), 0) as bounces, coalesce(sum(duration_sum), 0) as duration_sum')
@@ -50,7 +53,7 @@ final class ReportController extends Controller
 
         return response()->json([
             'data' => ['pageviews' => (int) $metrics->pageviews, 'visitors' => (int) $metrics->visitors, 'sessions' => (int) $metrics->sessions, 'bounces' => (int) $metrics->bounces, 'duration_sum' => (int) $metrics->duration_sum, 'breakdown' => $breakdown],
-            'meta' => ['visitor_label' => 'visits (approximate)', 'timezone' => $site->timezone],
+            'meta' => ['visitor_label' => $daily === null ? 'visits (approximate)' : 'visitors', 'timezone' => $site->timezone],
         ]);
     }
 }
