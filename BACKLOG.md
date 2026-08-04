@@ -23,7 +23,7 @@ Until PR4 introduces the salts table and rotation, the PR2 site map omits the `s
 3. Sampling is opt-in only. Any sampled figure must be labelled everywhere it appears.
 4. A first-party collector proxy is post-v0; the collector contract remains stable for a future proxy.
 5. Country resolution defaults to an edge header, falling back to `unknown`; no geo database is vendored. An operator-supplied database remains an opt-in future path.
-6. GrandpaSSOn inbound mode remains disabled until the broker owns and ships `analytics:read`, `analytics:write`, and `analytics:callback`; [GrandpaSSOn #115](https://github.com/suporterfid/grandpasson/issues/115) tracks that prerequisite, and PR12 must use its fake-backed, flags-off mode until then.
+6. GrandpaSSOn delivered `analytics:read`, `analytics:write`, and `analytics:callback` through [issue #115](https://github.com/suporterfid/grandpasson/issues/115), merged as PR #118 with its CI green. PR12 keeps both runtime modes disabled by default, but now contains the real HTTP seam and fake-backed contract tests; operators may enable it only after creating the separately documented browser and service clients.
 7. Keep four buffer shards by default. Document the inode arithmetic and add orphan-accumulation warning coverage with the PR15 load/capacity work.
 
 ## Resolved question 8 — PR6 bot-classification input

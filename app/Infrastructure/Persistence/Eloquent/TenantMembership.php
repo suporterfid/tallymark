@@ -16,6 +16,7 @@ class TenantMembership extends Model
         'tenant_id',
         'user_id',
         'role',
+        'identity_provider',
     ];
 
     protected function casts(): array

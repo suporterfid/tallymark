@@ -2,14 +2,19 @@
 
 namespace App\Policies;
 
+use App\Application\GrandpaSson\GrandpaSsonMachineActor;
 use App\Domain\Shared\TenantRole;
 use App\Infrastructure\Persistence\Eloquent\Tenant;
 use App\Infrastructure\Persistence\Eloquent\User;
 
 final class TenantPolicy
 {
-    public function view(User $user, Tenant $tenant): bool
+    public function view(User|GrandpaSsonMachineActor $user, Tenant $tenant): bool
     {
+        if ($user instanceof GrandpaSsonMachineActor) {
+            return true;
+        }
+
         if ($user->isPlatformAdmin()) {
             return true;
         }
@@ -19,8 +24,12 @@ final class TenantPolicy
             ->exists();
     }
 
-    public function update(User $user, Tenant $tenant): bool
+    public function update(User|GrandpaSsonMachineActor $user, Tenant $tenant): bool
     {
+        if ($user instanceof GrandpaSsonMachineActor) {
+            return true;
+        }
+
         if ($user->isPlatformAdmin()) {
             return true;
         }
