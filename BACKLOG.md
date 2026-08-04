@@ -25,3 +25,7 @@ Owner decision: v0 uses a small zero-dependency collector classifier and writes 
 ## Follow-up — Composer security advisory feed
 
 During PR6, `composer audit --locked --no-interaction` could not query Packagist because the advisory endpoint timed out. Composer had reported two advisories affecting one existing package during installation, but no advisory detail was retrieved or treated as verified. Re-run the network-backed audit during PR14's release work and record the actual package/advisory result before shipping a release.
+
+## Open question 9 — PR9 goals and real-time screen sequencing
+
+Section 19 and PR9 require Goals and a real-time-ish “last 30 minutes” screen, but §20 schedules the Goals data model and conversion metrics for PR11. The only retained reporting data available in PR9 is hourly aggregation, which cannot truthfully represent a 30-minute window. Choose one: move the required Goal model/metrics and a sufficiently granular real-time aggregate into PR9; defer the two screens to PR11 and amend PR9’s deliverable; or explicitly define a labelled hourly approximation. PR9 remains unmerged until this is resolved.
