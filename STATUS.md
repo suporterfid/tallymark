@@ -14,6 +14,8 @@ PR6 uses the owner-authorized resolution of open question 8: a zero-dependency c
 
 PR7 — Aggregation & cardinality merged as pull request #16; GitHub issue #15 is closed. It adds all hourly dimensions, unique keys, idempotent staged-batch aggregation, a pure session-state transition with persistent cross-batch correction, cardinality folding, self-referral normalization, and durable cap warnings. On the reviewed branch, `./scripts/tm.sh test` passed 55 tests / 347 assertions and the Docker-run runtime licence audit passed; final review found no blockers.
 
+PR8 — Rollups & retention is ready for review; GitHub issue: #17. It adds daily aggregate tables, exact `daily_visitors` materialized from the closed daily session state, idempotent `analytics:rollup`, and chunked retention that deletes hourly rows only after their matching daily rollup exists. `./scripts/tm.sh test` passed 57 tests / 356 assertions; the Docker-run runtime licence audit also passed.
+
 ## Licence decision
 
 The specification was amended with owner authorization: a dual-licensed dependency is acceptable when it offers a permitted option, TallyMark selects that option, and the selection is recorded from its authoritative licence file. `nette/schema` and `nette/utils` are used under their New BSD option; the audit record is in `docs/security/dependency-audit.md`.
