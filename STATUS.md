@@ -2,7 +2,7 @@
 
 ## Current implementation unit
 
-PR11 â€” Goals & shared dashboards is in implementation on `codex/pr11-goals-shared-dashboards`; GitHub issue #26 is open. Owner authorization resolved open question 10: goals use exactly one event-name or literal URL-prefix matcher; the public view shows only all-time aggregate pageviews, sessions, and conversions without goal names; the opaque `dash_` token can be enabled, disabled, and rotated; rendered output is cached for five minutes.
+PR11 â€” Goals & shared dashboards merged as pull request #27; GitHub issue #26 is closed. Owner authorization resolved open question 10: goals use exactly one event-name or literal URL-prefix matcher; the public Blade view shows only all-time aggregate pageviews, sessions, and conversions without goal names; the opaque `dash_` token can be enabled, disabled, and rotated; rendered output is cached for five minutes. On merged `main`, `./scripts/tm.sh test` passed 77 tests / 502 assertions, and independent review found no Critical or Important blockers.
 
 PR3 — Standalone collector merged as pull request #8; GitHub issue #7 is closed. PR4 — Visitor hashing & salts merged as pull request #10; GitHub issue #9 is closed. PR5 — Ingest pipeline merged as pull request #12; GitHub issue #11 is closed. PR6 — Sessionization & classification merged as pull request #14; GitHub issue #13 is closed.
 
