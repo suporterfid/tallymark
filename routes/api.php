@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\GoalController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SharedDashboardController;
 use App\Http\Controllers\Api\V1\SiteController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['grandpasson.machine', 'tenant.context'])->group(function (): void {
+    Route::get('/v1/tenants/{tenant}/health', [HealthController::class, 'show']);
     Route::get('/v1/tenants/{tenant}/audit-logs', [AuditLogController::class, 'index']);
     Route::get('/v1/tenants/{tenant}/sites', [SiteController::class, 'index']);
     Route::get('/v1/tenants/{tenant}/sites/{siteId}/report', [ReportController::class, 'show']);
