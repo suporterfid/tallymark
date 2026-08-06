@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Aggregation;
 
+use App\Application\TaskConnect\GoalConversionTaskService;
 use App\Domain\Aggregation\CardinalityGuard;
 use App\Domain\Aggregation\SessionState;
 use App\Domain\Aggregation\SessionStateMachine;
@@ -13,6 +14,7 @@ use App\Infrastructure\Persistence\Eloquent\IngestBatch;
 use App\Infrastructure\Persistence\Eloquent\SiteHost;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class AggregationRunner
 {
@@ -20,26 +22,36 @@ final class AggregationRunner
         private readonly ReferrerNormalizer $referrers,
         private readonly Clock $clock,
         private readonly SessionStateMachine $sessionStateMachine,
+        private readonly GoalConversionTaskService $taskConnect,
     ) {}
 
     public function run(): void
     {
+        $this->taskConnect->dispatchPending();
+        $tickId = Str::ulid()->toBase32();
+        $processed = false;
+
         while (($batch = IngestBatch::query()->where('status', 'staged')->orderBy('id')->first()) !== null) {
-            DB::transaction(function () use ($batch): void {
+            $processed = true;
+            DB::transaction(function () use ($batch, $tickId): void {
                 $batch = IngestBatch::query()->lockForUpdate()->findOrFail($batch->id);
                 if ($batch->status !== 'staged') {
                     return;
                 }
                 $events = $batch->events()->orderBy('line_number')->get()->pluck('payload')->all();
-                $this->aggregate($events);
+                $this->aggregate($events, $tickId);
                 $batch->events()->delete();
                 $batch->update(['status' => 'aggregated']);
             });
         }
+
+        if ($processed) {
+            $this->taskConnect->dispatchPending();
+        }
     }
 
     /** @param list<array<string,mixed>> $events */
-    private function aggregate(array $events): void
+    private function aggregate(array $events, string $tickId): void
     {
         $sessionMetrics = $this->sessionMetrics($events);
         $groups = [];
@@ -88,23 +100,38 @@ final class AggregationRunner
         foreach ($customGroups as $group) {
             $this->dimension($group['site_id'], $group['hour'], $group['events'], 'stats_hourly_events', fn ($e) => ['event_name' => (string) ($e['name'] ?: $e['event'])], 'count');
         }
-        $this->aggregateGoals($events);
+        $this->aggregateGoals($events, $tickId);
         $this->aggregateRealtime($events);
     }
 
     /** @param list<array<string,mixed>> $events */
-    private function aggregateGoals(array $events): void
+    private function aggregateGoals(array $events, string $tickId): void
     {
         $groups = [];
+        $siteIds = array_values(array_unique(array_map(static fn (array $event): int => (int) $event['site_id'], $events)));
+        $goalsBySite = DB::table('goals')
+            ->whereIn('site_id', $siteIds)
+            ->where('is_enabled', true)
+            ->get(['id', 'site_id', 'event_name', 'url_pattern'])
+            ->groupBy('site_id');
+
         foreach ($events as $event) {
-            if (($event['is_bot'] ?? false) || $event['event'] === 'pageview') {
+            if (($event['is_bot'] ?? false)) {
                 continue;
             }
 
             $eventName = (string) (($event['name'] ?? '') ?: $event['event']);
             $hour = (new \DateTimeImmutable((string) $event['timestamp']))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:00:00');
-            $goals = DB::table('goals')->where(['site_id' => (int) $event['site_id'], 'event_name' => $eventName])->get(['id']);
-            foreach ($goals as $goal) {
+            $path = (string) (parse_url((string) $event['url'], PHP_URL_PATH) ?: '/');
+            foreach ($goalsBySite->get((int) $event['site_id'], []) as $goal) {
+                $matchesEvent = $event['event'] !== 'pageview' && $goal->event_name === $eventName;
+                $matchesUrl = $event['event'] === 'pageview'
+                    && is_string($goal->url_pattern)
+                    && str_starts_with($path, $goal->url_pattern);
+                if (! $matchesEvent && ! $matchesUrl) {
+                    continue;
+                }
+
                 $groups[$goal->id.'|'.$hour]['goal_id'] = (int) $goal->id;
                 $groups[$goal->id.'|'.$hour]['site_id'] = (int) $event['site_id'];
                 $groups[$goal->id.'|'.$hour]['hour'] = $hour;
@@ -113,7 +140,9 @@ final class AggregationRunner
         }
 
         foreach ($groups as $group) {
-            $this->add('stats_hourly_goals', ['site_id' => $group['site_id'], 'goal_id' => $group['goal_id'], 'hour' => $group['hour']], ['conversions' => count($group['events']), 'visitors' => count(array_unique(array_column($group['events'], 'visitor_id')))]);
+            $conversions = count($group['events']);
+            $this->add('stats_hourly_goals', ['site_id' => $group['site_id'], 'goal_id' => $group['goal_id'], 'hour' => $group['hour']], ['conversions' => $conversions, 'visitors' => count(array_unique(array_column($group['events'], 'visitor_id')))]);
+            $this->taskConnect->queue($tickId, $group['site_id'], $group['goal_id'], $group['hour'], $conversions);
         }
     }
 
