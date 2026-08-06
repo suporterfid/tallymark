@@ -11,7 +11,7 @@ final class GrandpaSsonIdentityProvider implements IdentityProvider
 
     public function resolveIdentity(Request $request): ?User
     {
-        $identity = $request->session()->get('grandpasson.identity');
+        $identity = $request->hasSession() ? $request->session()->get('grandpasson.identity') : null;
         $userId = is_array($identity) ? ($identity['user_id'] ?? null) : null;
         if (is_numeric($userId)) {
             return User::query()->find((int) $userId);
@@ -22,7 +22,7 @@ final class GrandpaSsonIdentityProvider implements IdentityProvider
 
     public function accessibleTenantIds(Request $request): ?array
     {
-        $identity = $request->session()->get('grandpasson.identity');
+        $identity = $request->hasSession() ? $request->session()->get('grandpasson.identity') : null;
         $tenantIds = is_array($identity) ? ($identity['tenant_public_ids'] ?? null) : null;
 
         if (! is_array($tenantIds)) {
