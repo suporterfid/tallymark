@@ -20,6 +20,11 @@ class User extends Authenticatable
         'email',
         'password',
         'is_platform_admin',
+        'locale',
+    ];
+
+    protected $attributes = [
+        'locale' => 'en',
     ];
 
     protected $hidden = [

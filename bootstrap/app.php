@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'tenant.context' => \App\Http\Middleware\ResolveTenantContext::class,
+            'locale.from_user' => \App\Http\Middleware\SetLocaleFromUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
