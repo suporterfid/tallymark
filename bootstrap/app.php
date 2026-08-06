@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuthenticateGrandpaSsonMachineToken;
 use App\Http\Middleware\ResolveTenantContext;
+use App\Http\Middleware\SetLocaleFromUser;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant.context' => ResolveTenantContext::class,
             'grandpasson.machine' => AuthenticateGrandpaSsonMachineToken::class,
+            'locale.from_user' => SetLocaleFromUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
