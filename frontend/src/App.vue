@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 type Report = { data: { pageviews: number; visitors: number; sessions: number; bounces: number; duration_sum: number; views_per_session: number; bounce_rate: number; average_session_duration: number; breakdown_metric: string; breakdown: { key: string; pageviews?: number; conversions?: number; visitors: number; conversion_rate?: number }[] }; comparison: { pageviews: number; visitors: number; sessions: number }; meta: { visitor_label: string; comparison_visitor_label: string; timezone: string; operational: { ingest: { fresh: boolean; last_seen_at: string | null }; cardinality_warning: boolean; shed_events: number } } }
@@ -20,6 +20,35 @@ const title = computed(() => t(screen.value))
 const number = (value: number) => new Intl.NumberFormat(locale.value).format(value)
 const duration = (value: number) => `${Math.floor(value / 60)} ${t('minutes')} ${Math.round(value % 60)} ${t('seconds')}`
 const bucket = (value: string) => new Intl.DateTimeFormat(locale.value, { dateStyle: 'short', timeStyle: 'short', timeZone: realtimeTimezone.value }).format(new Date(value))
+let syncingLocale = false
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/v1/me')
+    if (response.ok) {
+      const payload = await response.json()
+      syncingLocale = true
+      locale.value = payload.data.locale
+      syncingLocale = false
+    }
+  } catch {
+    // Not logged in yet, or request failed — keep the navigator-based default.
+  }
+})
+
+watch(locale, async (next) => {
+  if (syncingLocale) return
+  try {
+    await fetch('/api/v1/me/locale', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: next }),
+    })
+  } catch {
+    // Best-effort — the switch already took effect locally.
+  }
+})
+
 async function load() { error.value = ''; try { if (screen.value === 'realtime') { const response = await fetch(`/api/v1/tenants/${tenantId.value}/sites/${siteId.value}/realtime?until=${encodeURIComponent(new Date().toISOString())}`); if (!response.ok) throw new Error(); const payload = await response.json(); realtime.value = payload.data; realtimeTimezone.value = payload.meta.timezone; return } const dimension = dimensions.includes(screen.value) ? `&dimension=${screen.value}` : ''; const response = await fetch(`/api/v1/tenants/${tenantId.value}/sites/${siteId.value}/report?from=${from.value}&to=${to.value}${dimension}`); if (!response.ok) throw new Error(); report.value = await response.json() } catch { error.value = t('loadError') } }
 </script>
 
