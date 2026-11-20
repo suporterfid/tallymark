@@ -12,7 +12,7 @@
 - **Reference deployment profile:** shared hosting without VPS, Redis, ClickHouse, Node runtime, or process supervisors
 - **Development environment:** Docker only (no host PHP/Composer/Node)
 - **Initial interface languages:** English (`en`) and Brazilian Portuguese (`pt-BR`)
-- **Sibling projects:** [`taskconnect`](https://github.com/suporterfid/taskconnect) (architecture donor), [`grandpasson`](https://github.com/suporterfid/grandpasson) (identity), [`docmark`](https://github.com/suporterfid/convertdoctomd-php) (pure-PHP discipline), [`jotter`](https://github.com/suporterfid/jotter)
+- **Sibling projects:** [`taskconnect`](https://github.com/suporterfid/taskconnect) (architecture donor), [`grandpasson`](https://github.com/suporterfid/grandpasson-ce) (identity), [`docmark`](https://github.com/suporterfid/convertdoctomd-php) (pure-PHP discipline), [`jotter`](https://github.com/suporterfid/jotter)
 
 ---
 
@@ -635,7 +635,7 @@ php cron/admin.php client:create-service "TallyMark" \
 
 `--aud` is a **fixed pin, not a default**: the broker only issues tokens whose `aud` equals the client's configured audience, and a client created without `--aud` can never obtain one. The service-client secret is printed **once**.
 
-**Cross-repo dependency — a hard blocker for inbound mode.** GrandpaSSOn's scope vocabulary is a **static allowlist** in `app/Domain/ScopeVocabulary.php`; there is no dynamic registration, and `client:create-service` aborts on an unknown scope. `analytics:read` / `analytics:write` / `analytics:callback` **do not exist today**. An issue **MUST** be opened in `suporterfid/grandpasson`; `docs/architecture/grandpasson-cross-repo.md` **MUST** track each scope's status. Until they land, PR12 ships with flags off, tested against fakes. **v0 MUST NOT be blocked on another repository.**
+**Cross-repo dependency — a hard blocker for inbound mode.** GrandpaSSOn's scope vocabulary is a **static allowlist** in `app/Domain/ScopeVocabulary.php`; there is no dynamic registration, and `client:create-service` aborts on an unknown scope. `analytics:read` / `analytics:write` / `analytics:callback` **do not exist today**. An issue **MUST** be opened in `suporterfid/grandpasson-ce`; `docs/architecture/grandpasson-cross-repo.md` **MUST** track each scope's status. Until they land, PR12 ships with flags off, tested against fakes. **v0 MUST NOT be blocked on another repository.**
 
 ### 14.6 Known traps (verified against broker source)
 
@@ -904,7 +904,7 @@ Funnels; limited cross-dimension filtering via a narrow pre-computed combination
 
 ### 22.1–22.7 Owner decisions
 
-The owner resolved questions 1–7 as follows: retain file buffering and validate it in PR15; retain exact daily visitors with retention; make sampling opt-in and visibly labelled; defer the first-party proxy to post-v0; use edge-header geo with `unknown` fallback; keep GrandpaSSOn inbound disabled until [GrandpaSSOn #115](https://github.com/suporterfid/grandpasson/issues/115) delivers the three analytics scopes; and retain four buffer shards while PR15 documents inode arithmetic and warning coverage. These decisions supersede the open wording above.
+The owner resolved questions 1–7 as follows: retain file buffering and validate it in PR15; retain exact daily visitors with retention; make sampling opt-in and visibly labelled; defer the first-party proxy to post-v0; use edge-header geo with `unknown` fallback; keep GrandpaSSOn inbound disabled until GrandpaSSOn #115 delivers the three analytics scopes; and retain four buffer shards while PR15 documents inode arithmetic and warning coverage. These decisions supersede the open wording above.
 
 ---
 
@@ -981,6 +981,6 @@ Load the `demosite` page carrying a real snippet → assert the beacon fired →
 
 MIT. See `LICENSE`.
 
-Patterns are adapted from [`suporterfid/taskconnect`](https://github.com/suporterfid/taskconnect), [`suporterfid/grandpasson`](https://github.com/suporterfid/grandpasson), and [`suporterfid/convertdoctomd-php`](https://github.com/suporterfid/convertdoctomd-php) — all MIT and under the same ownership.
+Patterns are adapted from [`suporterfid/taskconnect`](https://github.com/suporterfid/taskconnect), [`suporterfid/grandpasson-ce`](https://github.com/suporterfid/grandpasson-ce), and [`suporterfid/convertdoctomd-php`](https://github.com/suporterfid/convertdoctomd-php) — all MIT and under the same ownership.
 
 All runtime dependencies are permissively licensed by construction (§4.4), enforced by the release build. This is the property that distinguishes TallyMark from every existing PHP + MySQL analytics platform, and it **MUST NOT** be traded away for any feature.
